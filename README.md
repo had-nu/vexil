@@ -1,11 +1,11 @@
 # Vexil
 
-A Go-based, CI/CD-native tool designed to detect hardcoded secrets in files before they reach production. It focuses on zero-fluff reliability, speed, and accuracy through mathematical entropy analysis and confidence scoring.
+A Go-based, CI/CD-native tool designed to detect hardcoded secrets in files before they reach production. It focuses on an exceptionally high Signal-to-Noise Ratio (SNR), speed, and accuracy through mathematical entropy analysis and confidence scoring.
 
 ## Philosophy
 
 - **Security First:** Blocking leaks at the PR/Commit phase.
-- **Precision (Signal to Noise):** Developers shouldn't suffer from alert fatigue. If it's flagged as `Critical`, it is highly likely to be a real cryptographic secret.
+- **Precision (Signal-to-Noise Ratio):** Developers shouldn't suffer from alert fatigue. If it's flagged as `Critical`, it is highly likely to be a real cryptographic secret.
 - **Direct Integration:** Built to connect seamlessly with advanced release gates (like Wardex) via JSON payloads and Confidence Scoring.
 
 ## Core Features
@@ -49,6 +49,9 @@ docker compose run vexil -dir /src -format json
 
 # CI/CD / Machine-readable output
 ./vexil -dir . -format json
+
+# SARIF output (Universal dashboard compatibility)
+./vexil -dir . -format sarif
 ```
 
 ### Output Formats
@@ -90,7 +93,7 @@ Found 1 potential secrets:
 
 Broad regex patterns match both actual secrets and development placeholders. 
 
-Vexil applies **Shannon entropy** (`H = -Σ p·log₂p`) to measure output randomness. Real cryptographic functions (UUIDs, base64-encoded hashes) score **above 3.5 bits/char**. Plaintext or repetitive placeholder strings score below 3.0.
+Vexil applies **Shannon entropy** (`H = -Σ p·log₂p`) to measure output randomness. Real cryptographic functions (UUIDs, base64-encoded hashes) score **above 3.5 bits/char**. Plaintext or repetitive placeholder strings score below 3.0. This mathematical filtering provides Vexil's high **Signal-to-Noise Ratio (SNR)**, allowing it to discard low-entropy noise.
 
 | Value | Entropy | Flagged? |
 |---|---|---|

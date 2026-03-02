@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **SARIF Support:** Included native `-format sarif` compliance to map mathematical Confidence Scores directly into GitHub Advanced Security (GHAS) and universal dashboards.
+- **SNR Definition:** Formalized textual documentation framing the "Signal-to-Noise Ratio (SNR)" algorithm.
+
+## [2.0.0] - 2026-03-02
+
+### Added
 - **Rebranding:** Renamed project from `cicd-secret-detector` to **Vexil**.
 - **Confidence Scoring:** `Finding` objects now possess a mathematically calculated Shannon Entropy score, translating into `Confidence` ratings (`Low`, `Medium`, `High`, `Critical`).
 - **Terminal UI:** Minimalist ASCII startup banner reflecting quantum cryptography and mathematical entropy equations (`pkg/reporter/banner.go`).

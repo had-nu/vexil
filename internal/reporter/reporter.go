@@ -38,6 +38,8 @@ func Report(w io.Writer, findings []types.Finding, format string) error {
 	switch format {
 	case "json":
 		return reportJSON(w, findings)
+	case "sarif":
+		return PrintSARIF(w, findings)
 	default:
 		return reportText(w, findings)
 	}

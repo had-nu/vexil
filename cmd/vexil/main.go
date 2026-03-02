@@ -11,6 +11,7 @@ import (
 	"github.com/had-nu/vexil/internal/detector"
 	"github.com/had-nu/vexil/internal/reporter"
 	"github.com/had-nu/vexil/internal/scanner"
+	"github.com/had-nu/vexil/internal/ui"
 )
 
 func main() {
@@ -23,7 +24,7 @@ func main() {
 func run() error {
 	var (
 		dirArg = flag.String("dir", ".", "Directory to scan")
-		format = flag.String("format", "text", "Output format (text, json)")
+		format = flag.String("format", "text", "Output format (text, json, sarif)")
 	)
 	flag.Parse()
 
@@ -35,7 +36,7 @@ func run() error {
 	s := scanner.New(d)
 
 	if *format == "text" {
-		reporter.PrintBanner(os.Stderr)
+		ui.PrintBanner(os.Stderr)
 		fmt.Fprintf(os.Stderr, "Scanning %s...\n", *dirArg)
 	}
 

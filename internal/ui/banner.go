@@ -1,4 +1,4 @@
-package reporter
+package ui
 
 import (
 	"fmt"
