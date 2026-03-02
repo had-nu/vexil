@@ -1,41 +1,23 @@
 # Vexil
 
-Go CLI that detects hardcoded secrets before they reach production by combining pattern matching with Shannon entropy filtering to cut false positives. Integrates natively into CI/CD pipelines via non-zero exit codes, and scans any text file recursively using a concurrent worker pool.
+A Go-based, CI/CD-native tool designed to detect hardcoded secrets in files before they reach production. It focuses on zero-fluff reliability, speed, and accuracy through mathematical entropy analysis and confidence scoring.
 
-## Features
+## Philosophy
 
-- **Pattern Matching**: Detects common secrets like:
+- **Security First:** Blocking leaks at the PR/Commit phase.
+- **Precision (Signal to Noise):** Developers shouldn't suffer from alert fatigue. If it's flagged as `Critical`, it is highly likely to be a real cryptographic secret.
+- **Direct Integration:** Built to connect seamlessly with advanced release gates (like Wardex) via JSON payloads and Confidence Scoring.
+
+## Core Features
+
+- **Pattern Matching:** Native detection for:
   - AWS Access Key IDs & Secret Access Keys
   - Private Keys (RSA, DSA, EC, OPENSSH)
   - Generic API Keys & Tokens
-- **Entropy Filtering**: Reduces false positives by measuring the Shannon entropy of matched values. Broad patterns (e.g. `api_key`, `token`) only flag values that score above 3.5 bits/char* — the threshold that separates human-readable placeholders from cryptographically generated secrets.
-- **Confidence Scoring**: Exposes the mathematical subset of the entropy match (Low, Medium, High, Critical) allowing downstream tools (like Wardex) to ingest non-binary risk metrics.
-- **CI/CD Integration**: Exits with a non-zero status code (`1`) if secrets are found, blocking the build.
-- **Efficient Scanning**: Recursive directory traversal with concurrency (via worker pool pattern).
-- **Format Agnostic**: Scans any text file (YAML, JSON, Dockerfile, etc.), respecting `.git`, `node_modules`, and `vendor` ignores.
-
-## How False Positive Reduction Works
-
-Broad regex patterns inevitably match non-secret strings like:
-
-```yaml
-token: test-token-local-dev
-api_key: your_api_key_here_1234
-```
-
-**Shannon entropy** (`H = -Σ p·log₂p`) measures how random a string is in bits per character. Real secrets produced by cryptographic functions (UUIDs, base64-encoded keys) score **above 3.5 bits/char**. Human-readable strings score below 3.0.
-
-| Value | Entropy | Flagged? |
-|---|---|---|
-| `AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA` | 0.0 bits | ✗ No |
-| `changemechangemechangemech` | ~2.8 bits | ✗ No |
-| `abcdefghabcdefghabcdefghab` (8-symbol cycle) | 3.0 bits | ✗ No |
-| `x7Kp2mQnR9vLwZ4sXqY8nP3r` | ~4.5 bits | ✓ Yes |
-| `wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY` | ~4.1 bits | ✓ Yes |
-
-> **Note:** Sequential alphabet (`abcdefghijklmnopqrstuvwxyz`) has ~4.8 bits of entropy (29 unique chars) and *is* correctly flagged. Low entropy requires **few unique symbols repeated often**, not just human-predictable ordering.
-
-Patterns that are specific enough by regex alone (AWS Access Key ID prefix `AKIA...`, PEM headers) skip the entropy check entirely.
+- **Entropy Filtering:** Reduces false positives by measuring the Shannon entropy of matched values in bits/char. Generic patterns (`api_key`, `token`) only flag values that score above the human-readable threshold (3.5+ bits/char).
+- **Confidence Scoring:** Outputs the calculated entropy as a non-binary risk metric (`Low`, `Medium`, `High`, `Critical`), enabling downstream tools to ingest proportional risk.
+- **Fail-Fast:** Exits with a non-zero status code (`1`) if secrets are found.
+- **Format Agnostic & Fast:** Scans any text file recursively, powered by a concurrent worker pool, while automatically respecting `.git`, `node_modules`, `vendor`, and `testdata` ignores.
 
 ## Installation
 
@@ -43,79 +25,86 @@ Patterns that are specific enough by regex alone (AWS Access Key ID prefix `AKIA
 go install github.com/had-nu/vexil/cmd/vexil@latest
 ```
 
-Or build from source:
-
-```bash
-git clone https://github.com/had-nu/vexil.git
-cd vexil
-go build -o vexil cmd/vexil/main.go
-```
-
-### Docker (recommended if Go is not installed)
+### Docker
 
 ```bash
 # Build the image
 docker compose build
 
-# Run a scan
+# Run a scan in the current directory via volume binding
 docker compose run vexil
 
-# Scan with JSON output
+# Scan with JSON format for CI pipelines
 docker compose run vexil -dir /src -format json
 ```
 
 ## Usage
 
 ```bash
-# Scan current directory
+# General run on the working directory
 ./vexil
 
-# Scan a specific path
+# Pointing to a specific path
 ./vexil -dir /path/to/project
 
-# JSON output (for downstream tooling)
+# CI/CD / Machine-readable output
 ./vexil -dir . -format json
 ```
 
-### Example Output (Text)
+### Output Formats
 
+**Text UI:** (Minimalist and clean)
 ```
-Scanning testdata/manual...
-Scanned in 165.07µs. Found 1 secrets.
+[15:57:47.426]     H(X) = -Σ P(x) log₂ P(x)
+              V E X I L
+              Entropic Secret Detector       |ψ⟩ = (1/√2)(|01⟩ - |10⟩) ↣ QKD
+
+    ⊢ ENGINE  : ONLINE
+    ⊢ MATH    : Shannon Entropy Thresholds
+    ⊢ CRYPTO  : RSA, EC, AES-GCM, HMAC
+
+Scanning . ...
 Found 1 potential secrets:
 
-[1] testdata/manual/secrets.txt:1
-    Type: AWS Access Key ID
-    Confidence: Critical (Entropy: 0.00)
-    Match: aws_access_key_id = AKIAIOSFODNN7EXAMPLE
+[1] conf/aws-credentials.yaml:23
+    Type: AWS Secret Access Key
+    Confidence: Critical (Entropy: 4.66)
+    Match: aws_secret_access_key = [REDACTED]
 ```
 
-## Running Tests
+**JSON Output:**
+```json
+[
+  {
+    "file_path": "conf/aws-credentials.yaml",
+    "line_number": 23,
+    "secret_type": "AWS Secret Access Key",
+    "redacted_value": "aws_secret_access_key = [REDACTED]",
+    "entropy": 4.66,
+    "confidence": "Critical"
+  }
+]
+```
+
+## How Entropy Filtering Works
+
+Broad regex patterns match both actual secrets and development placeholders. 
+
+Vexil applies **Shannon entropy** (`H = -Σ p·log₂p`) to measure output randomness. Real cryptographic functions (UUIDs, base64-encoded hashes) score **above 3.5 bits/char**. Plaintext or repetitive placeholder strings score below 3.0.
+
+| Value | Entropy | Flagged? |
+|---|---|---|
+| `changemechangemechangemech` | ~2.8 bits | ✗ No |
+| `abcdefghabcdefghabcdefghab` | 3.0 bits | ✗ No |
+| `x7Kp2mQnR9vLwZ4sXqY8nP3r` | ~4.5 bits | ✓ Yes |
+
+Specific patterns (like an AWS Access Key ID starting with "AKIA") automatically skip the entropy check and are flagged as `Critical` deterministically.
+
+## Developing & Testing
 
 ```bash
+# Run the entire test suite
 go test -v ./...
 ```
 
-The test suite covers:
-
-- **True positives** — real secrets that must be detected
-- **Redaction** — raw secret values must never appear in output
-- **False positives** — low-entropy placeholder values that must not be flagged
-- **Entropy boundary** — values just below and above the 3.5 threshold
-- **Confidence Scoring** — validates boundaries for internal downstream tools
-- **`shannonEntropy` unit tests** — deterministic checks with known reference values
-
-## Project Structure
-
-```
-vexil/
-├── bin/
-├── cmd/
-│   └── vexil/              # Entry point
-├── internal/
-│   ├── detector/           # Pattern matching + entropy filtering + score
-│   ├── scanner/            # File traversal + worker pool
-│   ├── reporter/           # Output formatting (text, JSON)
-│   └── types/              # Shared types (Finding)
-└── testdata/               # Test fixtures
-```
+Tests ensure mathematically accurate entropy bounds, verifying that false positives like `your_api_key_here` are correctly ignored while high-entropy strings are caught. All outputs are checked for redaction logic to ensure secrets never leak into stdout.

@@ -36,7 +36,7 @@ func PrintBanner(w io.Writer) {
 
 	// Math / Crypto subtle background
 	bg1 := colorizeHex("H(X) = -Σ P(x) log₂ P(x)")
-	bg2 := colorizeHex("e = mc² ↣ E(k, m) = c")
+	bg2 := colorizeHex("|ψ⟩ = (1/√2)(|01⟩ - |10⟩) ↣ QKD")
 
 	// Layout
 	fmt.Fprintf(w, "%s    %s\n", tStamp, bg1)
