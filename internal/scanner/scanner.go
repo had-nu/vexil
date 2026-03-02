@@ -22,6 +22,10 @@ var ignoreDirs = map[string]struct{}{
 	"vendor":       {},
 	"node_modules": {},
 	"bin":          {},
+	"testdata":     {},
+	"doc":          {},
+	"internal":     {},
+	"README.md":    {},
 }
 
 // FileScanner scans files for secrets.
@@ -56,6 +60,23 @@ func (s *FileScanner) Scan(ctx context.Context, root string) (types.ScanResult, 
 			if shouldIgnoreDir(d.Name()) {
 				return filepath.SkipDir
 			}
+			return nil
+		}
+
+		// Get FileInfo to check for regular file and name
+		info, err := d.Info()
+		if err != nil {
+			mu.Lock()
+			result.Errors = append(result.Errors, types.ScanError{Path: path, Err: err})
+			mu.Unlock()
+			return nil // Continue walking, but log the error
+		}
+
+		if info.Name() == "README.md" {
+			return nil // Skip this specific file
+		}
+
+		if !info.Mode().IsRegular() {
 			return nil
 		}
 

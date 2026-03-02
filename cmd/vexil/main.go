@@ -34,8 +34,12 @@ func run() error {
 	d := detector.New(nil) // Use defaults
 	s := scanner.New(d)
 
+	if *format == "text" {
+		reporter.PrintBanner(os.Stderr)
+		fmt.Fprintf(os.Stderr, "Scanning %s...\n", *dirArg)
+	}
+
 	// Scan
-	fmt.Fprintf(os.Stderr, "Scanning %s...\n", *dirArg)
 	start := time.Now()
 	result, err := s.Scan(ctx, *dirArg)
 	if err != nil {
