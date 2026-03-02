@@ -339,3 +339,25 @@ func TestEntropyBoundary(t *testing.T) {
 		})
 	}
 }
+
+func TestCalculateConfidence(t *testing.T) {
+	tests := []struct {
+		name    string
+		entropy float64
+		want    string
+	}{
+		{"Low confidence (<3.8)", 3.79, "Low"},
+		{"Medium confidence (<4.2)", 4.19, "Medium"},
+		{"High confidence (<4.6)", 4.59, "High"},
+		{"Critical confidence (>=4.6)", 4.7, "Critical"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := calculateConfidence(tt.entropy)
+			if got != tt.want {
+				t.Errorf("calculateConfidence(%v) = %v, want %v", tt.entropy, got, tt.want)
+			}
+		})
+	}
+}

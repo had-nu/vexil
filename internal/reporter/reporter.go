@@ -5,15 +5,17 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/hadnu/cicd-secret-detector/internal/types"
+	"github.com/had-nu/vexil/internal/types"
 )
 
 // reportFinding is the safe, serializable representation of a Finding.
 type reportFinding struct {
-	FilePath      string `json:"file_path"`
-	LineNumber    int    `json:"line_number"`
-	SecretType    string `json:"secret_type"`
-	RedactedValue string `json:"redacted_value"`
+	FilePath      string  `json:"file_path"`
+	LineNumber    int     `json:"line_number"`
+	SecretType    string  `json:"secret_type"`
+	RedactedValue string  `json:"redacted_value"`
+	Entropy       float64 `json:"entropy,omitempty"`
+	Confidence    string  `json:"confidence,omitempty"`
 }
 
 func toReportFindings(findings []types.Finding) []reportFinding {
@@ -24,6 +26,8 @@ func toReportFindings(findings []types.Finding) []reportFinding {
 			LineNumber:    f.LineNumber,
 			SecretType:    f.SecretType,
 			RedactedValue: f.RedactedValue,
+			Entropy:       f.Entropy,
+			Confidence:    f.Confidence,
 		}
 	}
 	return out
@@ -60,6 +64,9 @@ func reportText(w io.Writer, findings []types.Finding) error {
 	for i, f := range safe {
 		fmt.Fprintf(w, "[%d] %s:%d\n", i+1, f.FilePath, f.LineNumber)
 		fmt.Fprintf(w, "    Type: %s\n", f.SecretType)
+		if f.Confidence != "" {
+			fmt.Fprintf(w, "    Confidence: %s (Entropy: %.2f)\n", f.Confidence, f.Entropy)
+		}
 		fmt.Fprintf(w, "    Match: %s\n\n", f.RedactedValue)
 	}
 	return nil

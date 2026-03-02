@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/hadnu/cicd-secret-detector/internal/types"
+	"github.com/had-nu/vexil/internal/types"
 )
 
 // Pattern defines a regex for a specific secret type and how to redact its match.
@@ -126,12 +126,16 @@ func (d *Detector) checkPattern(pattern *Pattern, line string, lineNumber int) (
 		return types.Finding{}, false
 	}
 
-	// Entropy check: extract the actual value and measure randomness to eliminates false positives.
+	value := extractValue(pattern, match)
+	ent := shannonEntropy(value)
+	confidence := "Critical"
+
+	// Entropy check: measure randomness to eliminates false positives.
 	if pattern.MinEntropy > 0 {
-		value := extractValue(pattern, match)
-		if shannonEntropy(value) < pattern.MinEntropy {
+		if ent < pattern.MinEntropy {
 			return types.Finding{}, false
 		}
+		confidence = calculateConfidence(ent)
 	}
 
 	redacted := "[REDACTED]"
@@ -144,5 +148,20 @@ func (d *Detector) checkPattern(pattern *Pattern, line string, lineNumber int) (
 		SecretType:    pattern.Name,
 		Value:         strings.TrimSpace(line),
 		RedactedValue: redacted,
+		Entropy:       ent,
+		Confidence:    confidence,
 	}, true
+}
+
+func calculateConfidence(entropy float64) string {
+	if entropy < 3.8 {
+		return "Low"
+	}
+	if entropy < 4.2 {
+		return "Medium"
+	}
+	if entropy < 4.6 {
+		return "High"
+	}
+	return "Critical"
 }

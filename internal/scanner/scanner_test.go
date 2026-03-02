@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/hadnu/cicd-secret-detector/internal/types"
+	"github.com/had-nu/vexil/internal/types"
 )
 
 // mockDetector is a simple mock for testing specific outcomes.

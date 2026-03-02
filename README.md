@@ -1,4 +1,4 @@
-# CI/CD Secret Detector
+# Vexil
 
 Go CLI that detects hardcoded secrets before they reach production by combining pattern matching with Shannon entropy filtering to cut false positives. Integrates natively into CI/CD pipelines via non-zero exit codes, and scans any text file recursively using a concurrent worker pool.
 
@@ -9,6 +9,7 @@ Go CLI that detects hardcoded secrets before they reach production by combining 
   - Private Keys (RSA, DSA, EC, OPENSSH)
   - Generic API Keys & Tokens
 - **Entropy Filtering**: Reduces false positives by measuring the Shannon entropy of matched values. Broad patterns (e.g. `api_key`, `token`) only flag values that score above 3.5 bits/char* — the threshold that separates human-readable placeholders from cryptographically generated secrets.
+- **Confidence Scoring**: Exposes the mathematical subset of the entropy match (Low, Medium, High, Critical) allowing downstream tools (like Wardex) to ingest non-binary risk metrics.
 - **CI/CD Integration**: Exits with a non-zero status code (`1`) if secrets are found, blocking the build.
 - **Efficient Scanning**: Recursive directory traversal with concurrency (via worker pool pattern).
 - **Format Agnostic**: Scans any text file (YAML, JSON, Dockerfile, etc.), respecting `.git`, `node_modules`, and `vendor` ignores.
@@ -39,15 +40,15 @@ Patterns that are specific enough by regex alone (AWS Access Key ID prefix `AKIA
 ## Installation
 
 ```bash
-go install github.com/hadnu/cicd-secret-detector/cmd/secret-detector@latest
+go install github.com/had-nu/vexil/cmd/vexil@latest
 ```
 
 Or build from source:
 
 ```bash
-git clone https://github.com/hadnu/cicd-secret-detector.git
-cd cicd-secret-detector
-go build -o secret-detector cmd/secret-detector/main.go
+git clone https://github.com/had-nu/vexil.git
+cd vexil
+go build -o vexil cmd/vexil/main.go
 ```
 
 ### Docker (recommended if Go is not installed)
@@ -57,23 +58,23 @@ go build -o secret-detector cmd/secret-detector/main.go
 docker compose build
 
 # Run a scan
-docker compose run secret-detector
+docker compose run vexil
 
 # Scan with JSON output
-docker compose run secret-detector -dir /src -format json
+docker compose run vexil -dir /src -format json
 ```
 
 ## Usage
 
 ```bash
 # Scan current directory
-./secret-detector
+./vexil
 
 # Scan a specific path
-./secret-detector -dir /path/to/project
+./vexil -dir /path/to/project
 
 # JSON output (for downstream tooling)
-./secret-detector -dir . -format json
+./vexil -dir . -format json
 ```
 
 ### Example Output (Text)
@@ -85,6 +86,7 @@ Found 1 potential secrets:
 
 [1] testdata/manual/secrets.txt:1
     Type: AWS Access Key ID
+    Confidence: Critical (Entropy: 0.00)
     Match: aws_access_key_id = AKIAIOSFODNN7EXAMPLE
 ```
 
@@ -100,17 +102,18 @@ The test suite covers:
 - **Redaction** — raw secret values must never appear in output
 - **False positives** — low-entropy placeholder values that must not be flagged
 - **Entropy boundary** — values just below and above the 3.5 threshold
+- **Confidence Scoring** — validates boundaries for internal downstream tools
 - **`shannonEntropy` unit tests** — deterministic checks with known reference values
 
 ## Project Structure
 
 ```
-cicd-secret-detector/
+vexil/
 ├── bin/
 ├── cmd/
-│   └── secret-detector/    # Entry point
+│   └── vexil/              # Entry point
 ├── internal/
-│   ├── detector/           # Pattern matching + entropy filtering
+│   ├── detector/           # Pattern matching + entropy filtering + score
 │   ├── scanner/            # File traversal + worker pool
 │   ├── reporter/           # Output formatting (text, JSON)
 │   └── types/              # Shared types (Finding)

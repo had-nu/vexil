@@ -1,3 +1,3 @@
-module github.com/hadnu/cicd-secret-detector
+module github.com/had-nu/vexil
 
 go 1.25.7

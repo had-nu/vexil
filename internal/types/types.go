@@ -7,6 +7,8 @@ type Finding struct {
 	SecretType    string
 	Value         string // Raw value — for internal processing only, never log or display
 	RedactedValue string // Safe for output: preserves context, hides the secret
+	Entropy       float64
+	Confidence    string
 }
 
 // ScanError records a file-level error encountered during scanning.

@@ -8,9 +8,9 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/hadnu/cicd-secret-detector/internal/detector"
-	"github.com/hadnu/cicd-secret-detector/internal/reporter"
-	"github.com/hadnu/cicd-secret-detector/internal/scanner"
+	"github.com/had-nu/vexil/internal/detector"
+	"github.com/had-nu/vexil/internal/reporter"
+	"github.com/had-nu/vexil/internal/scanner"
 )
 
 func main() {
@@ -34,8 +34,12 @@ func run() error {
 	d := detector.New(nil) // Use defaults
 	s := scanner.New(d)
 
+	if *format == "text" {
+		reporter.PrintBanner(os.Stderr)
+		fmt.Fprintf(os.Stderr, "Scanning %s...\n", *dirArg)
+	}
+
 	// Scan
-	fmt.Fprintf(os.Stderr, "Scanning %s...\n", *dirArg)
 	start := time.Now()
 	result, err := s.Scan(ctx, *dirArg)
 	if err != nil {
