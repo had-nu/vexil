@@ -21,7 +21,7 @@ A Go-based, CI/CD-native tool designed to detect hardcoded secrets in files befo
 
 ## Installation
 
-```bas
+```bash
 go install github.com/had-nu/vexil/cmd/vexil@latest
 ```
 
