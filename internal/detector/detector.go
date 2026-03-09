@@ -53,6 +53,38 @@ func DefaultPatterns() []Pattern {
 			MinEntropy: 3.5,
 			valueRegex: regexp.MustCompile(`(?i)(?:api_key|apikey|secret|token)['"]?\s*(?:=|:)\s*['"]?([a-zA-Z0-9]{16,64})['"]?`),
 		},
+		{
+			Name:   "HashiCorp Vault Token",
+			Regex:  regexp.MustCompile(`\b(hvs\.|hvb\.|s\.)[A-Za-z0-9_\-]{20,}`),
+			Redact: nil,
+		},
+		{
+			Name:   "GitHub Token",
+			Regex:  regexp.MustCompile(`\b(ghp_|gho_|ghs_|ghu_|github_pat_)[A-Za-z0-9_]{36,}`),
+			Redact: nil,
+		},
+		{
+			Name:       "Infrastructure Password",
+			Regex:      regexp.MustCompile(`(?i)(password|passwd|pwd|secret)\s*(=|:)\s*['"]?[^\s'"]{8,}['"]?`),
+			Redact:     redactValue,
+			MinEntropy: 3.2,
+		},
+		{
+			Name:       "Kafka JAAS Password",
+			Regex:      regexp.MustCompile(`password\s*=\s*["']?[^\s"';]{8,}["']?`),
+			Redact:     redactValue,
+			MinEntropy: 3.0,
+		},
+		{
+			Name:   "JSON Web Token",
+			Regex:  regexp.MustCompile(`eyJ[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}`),
+			Redact: nil,
+		},
+		{
+			Name:   "Connection String with Credentials",
+			Regex:  regexp.MustCompile(`(?i)(postgres|mysql|mongodb|redis|amqp):\/\/[^:]+:[^@\s]{8,}@`),
+			Redact: redactValue,
+		},
 	}
 }
 

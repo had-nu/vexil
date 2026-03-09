@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/had-nu/vexil/internal/types"
 )
@@ -34,21 +35,74 @@ func toReportFindings(findings []types.Finding) []reportFinding {
 }
 
 // Report writes findings to the writer in the specified format.
-func Report(w io.Writer, findings []types.Finding, format string) error {
+func Report(w io.Writer, result types.ScanResult, format string) error {
 	switch format {
 	case "json":
-		return reportJSON(w, findings)
+		return reportJSON(w, result)
 	case "sarif":
-		return PrintSARIF(w, findings)
+		return PrintSARIF(w, result.Findings)
 	default:
-		return reportText(w, findings)
+		return reportText(w, result.Findings)
 	}
 }
 
-func reportJSON(w io.Writer, findings []types.Finding) error {
+type scanMetadata struct {
+	Tool              string `json:"tool"`
+	Version           string `json:"version"`
+	Timestamp         string `json:"timestamp"`
+	FilesScanned      int    `json:"files_scanned"`
+	FilesWithFindings int    `json:"files_with_findings"`
+	WorstConfidence   string `json:"worst_confidence"`
+	ScanErrors        int    `json:"scan_errors"`
+}
+
+type v2JSONReport struct {
+	ScanMetadata scanMetadata    `json:"scan_metadata"`
+	Findings     []reportFinding `json:"findings"`
+}
+
+func reportJSON(w io.Writer, result types.ScanResult) error {
+	safeFindings := toReportFindings(result.Findings)
+	
+	filesWithFindings := 0
+	worstConfVal := -1
+	worstConfStr := "None"
+	
+	confMap := map[string]int{
+		"Low": 1,
+		"Medium": 2,
+		"High": 3,
+		"Critical": 4,
+	}
+
+	uniqueFiles := make(map[string]bool)
+	for _, f := range safeFindings {
+		uniqueFiles[f.FilePath] = true
+		if val, ok := confMap[f.Confidence]; ok {
+			if val > worstConfVal {
+				worstConfVal = val
+				worstConfStr = f.Confidence
+			}
+		}
+	}
+	filesWithFindings = len(uniqueFiles)
+
+	report := v2JSONReport{
+		ScanMetadata: scanMetadata{
+			Tool: "vexil",
+			Version: "2.2.0", // Update for this release
+			Timestamp: time.Now().UTC().Format(time.RFC3339),
+			FilesScanned: result.FilesScanned,
+			FilesWithFindings: filesWithFindings,
+			WorstConfidence: worstConfStr,
+			ScanErrors: len(result.Errors),
+		},
+		Findings: safeFindings,
+	}
+
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
-	if err := enc.Encode(findings); err != nil {
+	if err := enc.Encode(report); err != nil {
 		return fmt.Errorf("encode json: %w", err)
 	}
 	return nil

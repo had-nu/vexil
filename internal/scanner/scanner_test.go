@@ -137,7 +137,7 @@ func TestScan(t *testing.T) {
 				}
 			}
 
-			s := New(tt.detector)
+			s := New(tt.detector, nil)
 			got, err := s.Scan(context.Background(), tmpDir)
 			if err != nil {
 				t.Fatalf("Scan() unexpected error: %v", err)
@@ -160,7 +160,7 @@ func TestScan_CollectsIOErrors(t *testing.T) {
 	}
 	t.Cleanup(func() { os.Chmod(path, 0644) })
 
-	s := New(alwaysFindsSecret())
+	s := New(alwaysFindsSecret(), nil)
 	result, err := s.Scan(context.Background(), tmpDir)
 
 	// Scan itself must not return a fatal error — it collects file errors.
@@ -208,9 +208,10 @@ func TestShouldIgnoreDir(t *testing.T) {
 		{"credentials", false},
 	}
 
+	s := New(nil, []string{".idea", ".vscode"})
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := shouldIgnoreDir(tt.name)
+			got := s.shouldIgnoreDir(tt.name)
 			if got != tt.want {
 				t.Errorf("shouldIgnoreDir(%q) = %v, want %v", tt.name, got, tt.want)
 			}

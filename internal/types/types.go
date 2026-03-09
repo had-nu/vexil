@@ -5,7 +5,7 @@ type Finding struct {
 	FilePath      string
 	LineNumber    int
 	SecretType    string
-	Value         string // Raw value — for internal processing only, never log or display
+	Value         string `json:"-"` // Raw value — for internal processing only, never log or display
 	RedactedValue string // Safe for output: preserves context, hides the secret
 	Entropy       float64
 	Confidence    string
@@ -23,8 +23,9 @@ func (se ScanError) Error() string {
 
 // ScanResult is the structured return value of a scan.
 type ScanResult struct {
-	Findings []Finding
-	Errors   []ScanError
+	FilesScanned int
+	Findings     []Finding
+	Errors       []ScanError
 }
 
 // HasErrors reports whether any file-level errors were recorded.

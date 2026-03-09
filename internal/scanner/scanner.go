@@ -15,35 +15,40 @@ type Detector interface {
 	Detect(content []byte) ([]types.Finding, error)
 }
 
-var ignoreDirs = map[string]struct{}{
+var defaultIgnoreDirs = map[string]struct{}{
 	".git":         {},
-	".idea":        {},
-	".vscode":      {},
 	"vendor":       {},
 	"node_modules": {},
 	"bin":          {},
-	"testdata":     {},
-	"doc":          {},
-	"internal":     {},
-	"README.md":    {},
 }
 
 // FileScanner scans files for secrets.
 type FileScanner struct {
-	detector Detector
+	detector   Detector
+	ignoreDirs map[string]struct{}
 }
 
 // New creates a new FileScanner.
-func New(d Detector) *FileScanner {
-	return &FileScanner{detector: d}
+func New(d Detector, customExcludes []string) *FileScanner {
+	ignores := make(map[string]struct{})
+	for k, v := range defaultIgnoreDirs {
+		ignores[k] = v
+	}
+	for _, ex := range customExcludes {
+		if ex != "" {
+			ignores[ex] = struct{}{}
+		}
+	}
+	return &FileScanner{detector: d, ignoreDirs: ignores}
 }
 
 // Scan walks the root directory and scans files for secrets.
 func (s *FileScanner) Scan(ctx context.Context, root string) (types.ScanResult, error) {
 	var (
-		result types.ScanResult
-		mu     sync.Mutex
-		wg     sync.WaitGroup
+		result       types.ScanResult
+		mu           sync.Mutex
+		wg           sync.WaitGroup
+		filesScanned int
 	)
 
 	sem := make(chan struct{}, 100)
@@ -57,7 +62,7 @@ func (s *FileScanner) Scan(ctx context.Context, root string) (types.ScanResult, 
 		}
 
 		if d.IsDir() {
-			if shouldIgnoreDir(d.Name()) {
+			if s.shouldIgnoreDir(d.Name()) {
 				return filepath.SkipDir
 			}
 			return nil
@@ -110,6 +115,10 @@ func (s *FileScanner) Scan(ctx context.Context, root string) (types.ScanResult, 
 				result.Findings = append(result.Findings, f...)
 				mu.Unlock()
 			}
+
+			mu.Lock()
+			filesScanned++
+			mu.Unlock()
 		}(path)
 
 		return nil
@@ -121,6 +130,7 @@ func (s *FileScanner) Scan(ctx context.Context, root string) (types.ScanResult, 
 		return types.ScanResult{}, fmt.Errorf("scan walk %s: %w", root, err)
 	}
 
+	result.FilesScanned = filesScanned
 	return result, nil
 }
 
@@ -146,7 +156,7 @@ func (s *FileScanner) scanFile(ctx context.Context, path string) ([]types.Findin
 	return result, nil
 }
 
-func shouldIgnoreDir(name string) bool {
-	_, ok := ignoreDirs[name]
+func (s *FileScanner) shouldIgnoreDir(name string) bool {
+	_, ok := s.ignoreDirs[name]
 	return ok
 }

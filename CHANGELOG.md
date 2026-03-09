@@ -8,10 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **SARIF Support:** Included native `-format sarif` compliance to map mathematical Confidence Scores directly into GitHub Advanced Security (GHAS) and universal dashboards.
-- **SNR Definition:** Formalized textual documentation framing the "Signal-to-Noise Ratio (SNR)" algorithm.
+- **Infrastructure Secret Patterns:** Introduced 6 new high-precision deterministic and entropy-gated token patterns (HashiCorp Vault, GitHub Tokens, JWT, Connection Strings, Infrastructure Passwords, and Kafka JAAS configs).
+- **JSON Envelope:** Wrapped JSON output in a `scan_metadata` struct to expose `files_scanned`, `worst_confidence`, and aggregate decision metrics for external API ingestions.
+- **Dynamic Exclusions:** Introduced the `-exclude` flag to override global ignore directories.
 
-## [2.0.0] - 2026-03-02
+### Changed
+- Refactored `JSON` output schema to comply exactly with downstream Wardex Risk Gates.
+
+### Fixed
+- **Scanner Range:** Fixed a severe bug where the hardcoded global ignore map skipped any directory named `internal/`, inadvertently causing Go repositories to skip primary code scanning.
+- **Value Leak:** Ensured `Finding.Value` struct tag `json:"-"` explicitly prohibits unauthorized json marshalling to prevent accidental exposure of raw unredacted credentials.
+
+## [2.1.0] - 2026-03-02
 
 ### Added
 - **Rebranding:** Renamed project from `cicd-secret-detector` to **Vexil**.

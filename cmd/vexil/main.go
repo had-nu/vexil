@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"time"
 
 	"github.com/had-nu/vexil/internal/detector"
@@ -23,17 +24,24 @@ func main() {
 
 func run() error {
 	var (
-		dirArg = flag.String("dir", ".", "Directory to scan")
-		format = flag.String("format", "text", "Output format (text, json, sarif)")
+		dirArg  = flag.String("dir", ".", "Directory to scan")
+		format  = flag.String("format", "text", "Output format (text, json, sarif)")
+		exclude = flag.String("exclude", "", "Comma-separated list of directories to exclude")
 	)
 	flag.Parse()
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
+	// Parse excludes
+	var excludes []string
+	if *exclude != "" {
+		excludes = strings.Split(*exclude, ",")
+	}
+
 	// Initialize components
 	d := detector.New(nil) // Use defaults
-	s := scanner.New(d)
+	s := scanner.New(d, excludes)
 
 	if *format == "text" {
 		ui.PrintBanner(os.Stderr)
@@ -47,7 +55,11 @@ func run() error {
 		return fmt.Errorf("scan: %w", err)
 	}
 	duration := time.Since(start)
-	fmt.Fprintf(os.Stderr, "Scanned in %v. Found %d secrets.\n", duration, len(result.Findings))
+	
+	// Print summary exclusively in text mode. Wait, actually we shouldn't ruin JSON stream
+	if *format == "text" {
+		fmt.Fprintf(os.Stderr, "Scanned %d files in %v. Found %d secrets.\n", result.FilesScanned, duration, len(result.Findings))
+	}
 
 	// Report any file-level errors so they are visible to the operator.
 	for _, se := range result.Errors {
@@ -55,7 +67,7 @@ func run() error {
 	}
 
 	// Report
-	if err := reporter.Report(os.Stdout, result.Findings, *format); err != nil {
+	if err := reporter.Report(os.Stdout, result, *format); err != nil {
 		return fmt.Errorf("report: %w", err)
 	}
 

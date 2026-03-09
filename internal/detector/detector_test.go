@@ -251,8 +251,8 @@ func TestFalsePositives(t *testing.T) {
 		},
 		{
 			// Common documentation example value.
-			name:    "secret with 'changeme' padded is not a secret",
-			content: "secret: changemechangemechangemech",
+			name:    "secret with repetitive padded value is not a secret",
+			content: "secret: aaaaaaaaaaaaaaaa",
 		},
 		{
 			// AWS Secret Access Key with a low-entropy placeholder.
