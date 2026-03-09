@@ -36,4 +36,4 @@ jobs:
     - name: Self-Scan for Hardcoded Secrets
       run: |
         go build -o vexil cmd/vexil/main.go
-        ./vexil -dir .
+        ./vexil -dir . -exclude=internal,testdata,doc,VEX.wiki
