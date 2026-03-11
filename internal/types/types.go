@@ -6,6 +6,7 @@ type Finding struct {
 	LineNumber    int
 	SecretType    string
 	Value         string `json:"-"` // Raw value — for internal processing only, never log or display
+	ValueHash     string `json:"value_hash"`
 	RedactedValue string // Safe for output: preserves context, hides the secret
 	Entropy       float64
 	Confidence    string
