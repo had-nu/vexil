@@ -1,6 +1,8 @@
 package detector
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"math"
 	"regexp"
 	"strings"
@@ -25,6 +27,11 @@ func redactValue(match string) string {
 		}
 	}
 	return "[REDACTED]"
+}
+
+func hashValue(v string) string {
+	h := sha256.Sum256([]byte(v))
+	return fmt.Sprintf("%x", h[:8])
 }
 
 func DefaultPatterns() []Pattern {
@@ -179,6 +186,7 @@ func (d *Detector) checkPattern(pattern *Pattern, line string, lineNumber int) (
 		LineNumber:    lineNumber,
 		SecretType:    pattern.Name,
 		Value:         strings.TrimSpace(line),
+		ValueHash:     hashValue(value),
 		RedactedValue: redacted,
 		Entropy:       ent,
 		Confidence:    confidence,
