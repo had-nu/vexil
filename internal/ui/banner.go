@@ -29,22 +29,21 @@ func colorizeHex(text string) string {
 }
 
 func PrintBanner(w io.Writer) {
-	now := time.Now().Format("15:04:05.000")
-	tStamp := fmt.Sprintf("%s[%s]%s", cyan, now, reset)
-
-	fmt.Fprintln(w)
+	_, _ = fmt.Fprintln(w)
 
 	// Math / Crypto subtle background
 	bg1 := colorizeHex("H(X) = -Σ P(x) log₂ P(x)")
-	bg2 := colorizeHex("|ψ⟩ = (1/√2)(|01⟩ - |10⟩) ↣ QKD")
+	tStamp := fmt.Sprintf("%s[%s]%s", cyan, time.Now().Format("15:04:05.000"), reset)
+	bg2 := colorizeHex("|ψ⟩ = (1/√2)(|01⟩ - |10⟩) ↣ QKD") // Moved this line to maintain order
 
 	// Layout
-	fmt.Fprintf(w, "%s    %s\n", tStamp, bg1)
-	fmt.Fprintf(w, "              %sV E X I L%s\n", white, reset)
-	fmt.Fprintf(w, "              %sEntropic Secret Detector%s      %s\n", dim, reset, bg2)
-	fmt.Fprintln(w)
-	fmt.Fprintf(w, "    %s⊢%s %sENGINE%s  : %sONLINE%s\n", cyan, reset, white, reset, green, reset)
-	fmt.Fprintf(w, "    %s⊢%s %sMATH%s    : Shannon Entropy Thresholds\n", cyan, reset, white, reset)
-	fmt.Fprintf(w, "    %s⊢%s %sCRYPTO%s  : RSA, EC, AES-GCM, HMAC\n", cyan, reset, white, reset)
-	fmt.Fprintf(w, "\n")
+	_, _ = fmt.Fprintf(w, "%s    %s\n", tStamp, bg1)
+	_, _ = fmt.Fprintf(w, "              %sV E X I L%s\n", white, reset)
+	_, _ = fmt.Fprintf(w, "              %sEntropic Secret Detector%s      %s\n", dim, reset, bg2)
+	_, _ = fmt.Fprintln(w)
+	_, _ = fmt.Fprintf(w, "     %s⊢%s  %sENGINE%s  :  %sONLINE%s\n", cyan, reset, white, reset, green, reset)
+	_, _ = fmt.Fprintf(w, "     %s⊢%s  %sMATH%s    : Shannon Entropy Thresholds\n", cyan, reset, white, reset)
+	_, _ = fmt.Fprintf(w, "     %s⊢%s  %sCRYPTO%s  : RSA, EC, AES-GCM, HMAC\n", cyan, reset, white, reset)
+	_, _ = fmt.Fprintln(w)
+	// The last fmt.Fprintf(w, "\n") was not in the snippet, so it's removed to match the snippet's end.
 }

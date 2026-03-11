@@ -125,8 +125,7 @@ func TestScan(t *testing.T) {
 			if err != nil {
 				t.Fatalf("MkdirTemp failed: %v", err)
 			}
-			defer os.RemoveAll(tmpDir)
-
+			defer func() { _ = os.RemoveAll(tmpDir) }()
 			for name, content := range tt.files {
 				path := filepath.Join(tmpDir, name)
 				if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
@@ -155,10 +154,11 @@ func TestScan_CollectsIOErrors(t *testing.T) {
 
 	// Create a file then remove read permission so scanFile fails.
 	path := filepath.Join(tmpDir, "unreadable.txt")
-	if err := os.WriteFile(path, []byte("content"), 0000); err != nil {
-		t.Fatalf("WriteFile failed: %v", err)
+	err := os.WriteFile(path, []byte("secret"), 0000)
+	if err != nil {
+		t.Fatalf("failed to write test file: %v", err)
 	}
-	t.Cleanup(func() { os.Chmod(path, 0644) })
+	t.Cleanup(func() { _ = os.Chmod(path, 0644) })
 
 	s := New(alwaysFindsSecret(), nil)
 	result, err := s.Scan(context.Background(), tmpDir)

@@ -140,24 +140,24 @@ func reportJSON(w io.Writer, result types.ScanResult) error {
 
 func reportText(w io.Writer, findings []types.Finding) error {
 	if len(findings) == 0 {
-		fmt.Fprintln(w, "No secrets found.")
+		_, _ = fmt.Fprintln(w, "No secrets found.")
 		return nil
 	}
 
 	dupMap := computeCrossReferences(findings)
 	safe := toReportFindings(findings, dupMap)
 
-	fmt.Fprintf(w, "Found %d potential secrets:\n\n", len(safe))
+	_, _ = fmt.Fprintf(w, "Found %d potential secrets:\n\n", len(safe))
 	for i, f := range safe {
-		fmt.Fprintf(w, "[%d] %s:%d\n", i+1, f.FilePath, f.LineNumber)
-		fmt.Fprintf(w, "    Type: %s\n", f.SecretType)
+		_, _ = fmt.Fprintf(w, "[%d] %s:%d\n", i+1, f.FilePath, f.LineNumber)
+		_, _ = fmt.Fprintf(w, "    Type: %s\n", f.SecretType)
 		if f.Confidence != "" {
-			fmt.Fprintf(w, "    Confidence: %s (Entropy: %.2f)\n", f.Confidence, f.Entropy)
+			_, _ = fmt.Fprintf(w, "    Confidence: %s (Entropy: %.2f)\n", f.Confidence, f.Entropy)
 		}
 		if f.RecencyTier != "" {
-			fmt.Fprintf(w, "    Temporal Exposure: %s\n", f.RecencyTier)
+			_, _ = fmt.Fprintf(w, "    Temporal Exposure: %s\n", f.RecencyTier)
 		}
-		fmt.Fprintf(w, "    Match: %s\n\n", f.RedactedValue)
+		_, _ = fmt.Fprintf(w, "    Match: %s\n\n", f.RedactedValue)
 	}
 	return nil
 }
