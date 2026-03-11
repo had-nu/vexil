@@ -11,7 +11,7 @@ type Finding struct {
 	Entropy       float64
 	Confidence    string
 	ExposureContext string
-	RecencyTier   string
+	RecencyTier     string
 	DuplicateAcrossFiles bool
 }
 
