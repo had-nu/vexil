@@ -26,3 +26,4 @@ Use standard conventional commit prefixes with clear, direct explanations:
 
 - **100% Passing Tests**: Ensure `go test -v ./...` passes without errors.
 - **Crypto & Unit Tests**: Any modifications to the entropy logic or pattern matching must be accompanied by mathematical or boundary-driven unit tests. No change will be accepted without coverage proving it does not inadvertently increase false positives.
+- **Performance & Stress Tests**: Contributions affecting the core loops (scanner, detector, reporter) must undergo stress testing to ensure sub-second latency and linear scaling. Use `Benchmark` functions in `_test.go` files to prove performance stability.

@@ -15,7 +15,10 @@ A Go-based, CI/CD-native tool designed to detect hardcoded secrets in files befo
   - Private Keys (RSA, DSA, EC, OPENSSH)
   - Generic API Keys & Tokens
 - **Entropy Filtering:** Reduces false positives by measuring the Shannon entropy of matched values in bits/char. Generic patterns (`api_key`, `token`) only flag values that score above the human-readable threshold (3.5+ bits/char).
-- **Confidence Scoring:** Outputs the calculated entropy as a non-binary risk metric (`Low`, `Medium`, `High`, `Critical`), enabling downstream tools to ingest proportional risk.
+- **Confidence Scoring:** Outputs the calculated entropy as a non-binary risk metric (`Low`, `Medium`, `High`, `Critical`).
+- **Contextual Awareness:** Classifies findings into exposure categories (Spatial Exposure) such as `application_code`, `ci_config`, or `test_fixture`.
+- **Git-Aware Scanning:** Optional `--git-aware` mode to scan the entire git history for leaked credentials.
+- **Credential Reuse Detection:** Identifies the same secret shared across multiple files via safe hashing.
 - **Fail-Fast:** Exits with a non-zero status code (`1`) if secrets are found.
 - **Format Agnostic & Fast:** Scans any text file recursively, powered by a concurrent worker pool, while automatically respecting `.git`, `node_modules`, `vendor`, and `testdata` ignores.
 
@@ -75,18 +78,31 @@ Found 1 potential secrets:
     Match: aws_secret_access_key = [REDACTED]
 ```
 
-**JSON Output:**
+**JSON Output (v3.0.0):**
 ```json
-[
-  {
-    "file_path": "conf/aws-credentials.yaml",
-    "line_number": 23,
-    "secret_type": "AWS Secret Access Key",
-    "redacted_value": "aws_secret_access_key = [REDACTED]",
-    "entropy": 4.66,
-    "confidence": "Critical"
-  }
-]
+{
+  "scan_metadata": {
+    "tool": "vexil",
+    "version": "3.0.0",
+    "timestamp": "2026-03-11T23:07:11Z",
+    "files_scanned": 57,
+    "files_with_findings": 10,
+    "credential_reuse_detected": true,
+    "scan_errors": 0
+  },
+  "findings": [
+    {
+      "file_path": "conf/aws-credentials.yaml",
+      "line_number": 23,
+      "secret_type": "AWS Secret Access Key",
+      "redacted_value": "aws_secret_access_key = [REDACTED]",
+      "value_hash": "1a5d44a2dca19669",
+      "entropy": 4.66,
+      "confidence": "Critical",
+      "exposure_context": "application_code"
+    }
+  ]
+}
 ```
 
 ## How Entropy Filtering Works

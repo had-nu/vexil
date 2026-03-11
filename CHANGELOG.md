@@ -5,12 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [3.0.0] - 2026-03-11
 
 ### Added
-- **Infrastructure Secret Patterns:** Introduced 6 new high-precision deterministic and entropy-gated token patterns (HashiCorp Vault, GitHub Tokens, JWT, Connection Strings, Infrastructure Passwords, and Kafka JAAS configs).
-- **JSON Envelope:** Wrapped JSON output in a `scan_metadata` struct to expose `files_scanned`, `worst_confidence`, and aggregate decision metrics for external API ingestions.
-- **Dynamic Exclusions:** Introduced the `-exclude` flag to override global ignore directories.
+- **Contextual Exposure (Spatial Exposure):** Findings now include an `exposure_context` field (e.g., `ci_config`, `test_fixture`, `application_code`) based on file path classification.
+- **Git-Aware Mode (`--git-aware`):** Introduced a second scan pass over git history. Detects secrets in deleted lines and previous commits. Findings are tagged with synthetic paths like `git:commit/<sha>:<path>`.
+- **ValueHash & Cross-Referencing:** Every finding now generates a safe `value_hash` (truncated SHA256). The reporter uses this to detect credential reuse across different files.
+- **Improved Pattern Coverage:** Added high-precision patterns for Jupyter Notebooks (`.ipynb`), Gradle build files, Ansible playbooks, and IDE (VSCode/JetBrains) configurations.
+- **Stress & Performance suite:** Added dedicated benchmarks and stress tests ensuring the scanner handles 100k+ lines and 10k+ findings with sub-second latency for JSON generation.
+
+### Changed
+- **[BREAKING]** JSON Envelope version bumped to `3.0.0`.
+- **[BREAKING]** Removed legacy `worst_confidence` field from `scan_metadata` in favor of multidimensional risk metrics.
+- **[BREAKING]** Renamed `WorstConfidence` to `Confidence` in internal types to reflect the move to a per-finding risk model.
+- Updated startup banner to reflect "Engine Online" status and crypto-entropy mathematical foundation.
+
+### Fixed
+- Fixed a type mismatch in stress tests that caused incorrect benchmark reporting.
+- Corrected `ValueHash` determinism in tests.
 
 ### Changed
 - Refactored `JSON` output schema to comply exactly with downstream Wardex Risk Gates.

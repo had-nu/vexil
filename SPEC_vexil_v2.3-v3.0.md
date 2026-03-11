@@ -1,6 +1,6 @@
 # Vexil: Adjustment Specification v2.3.0 → v3.0.0
 
-**Status:** Draft  
+**Status:** Final (Implemented)  
 **Author:** had-nu  
 **Relates to:** Wardex Foundry integration contract, Risk Lab Scenario 04
 
