@@ -10,6 +10,7 @@ type Finding struct {
 	RedactedValue string // Safe for output: preserves context, hides the secret
 	Entropy       float64
 	Confidence    string
+	ExposureContext string
 	RecencyTier   string
 	DuplicateAcrossFiles bool
 }

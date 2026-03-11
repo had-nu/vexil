@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/had-nu/vexil/internal/classifier"
 	"github.com/had-nu/vexil/internal/types"
 )
 
@@ -209,6 +210,8 @@ func (s *FileScanner) scanFile(ctx context.Context, path string) ([]types.Findin
 
 	for i := range result {
 		result[i].FilePath = path
+		result[i].ExposureContext = classifier.InferExposureContext(result[i].FilePath)
+		// TODO(phase-b): apply InferExposureContext to gitscanner.go findings
 	}
 
 	return result, nil
