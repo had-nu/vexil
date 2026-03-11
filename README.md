@@ -20,7 +20,7 @@ A Go-based, CI/CD-native tool designed to detect hardcoded secrets in files befo
 - **Git-Aware Scanning:** Optional `--git-aware` mode to scan the entire git history for leaked credentials.
 - **Credential Reuse Detection:** Identifies the same secret shared across multiple files via safe hashing.
 - **Fail-Fast:** Exits with a non-zero status code (`1`) if secrets are found.
-- **Format Agnostic & Fast:** Scans any text file recursively, powered by a concurrent worker pool, while automatically respecting `.git`, `node_modules`, `vendor`, and `testdata` ignores.
+- **Format Agnostic & Heavyweight Performance:** Scans any text file recursively, powered by a concurrent worker pool. Validated for 100k+ lines with sub-second latency.
 
 ## Installation
 
@@ -55,7 +55,18 @@ docker compose run vexil -dir /src -format json
 
 # SARIF output (Universal dashboard compatibility)
 ./vexil -dir . -format sarif
+
+# Git-Aware History Scan (v3.0+)
+./vexil -git-aware
 ```
+
+## The Vexil v3.0 Risk Model
+
+Vexil v3.0 transitions from binary detection to a **Multidimensional Risk Model**, providing high-fidelity signals for automated security gates:
+
+1. **Spatial Exposure (where):** Automatically classifies the file path risk (e.g., `ci_config` vs `test_fixture`).
+2. **Temporal Exposure (when):** Scans the entire git history to detect secrets deleted in the past.
+3. **Lateral Exposure (who):** Detects if the same secret is reused across multiple files via `value_hash`.
 
 ### Output Formats
 
