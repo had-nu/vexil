@@ -12,18 +12,18 @@ RUN go mod download
 COPY . .
 
 # Build the binary
-RUN CGO_ENABLED=0 GOOS=linux go build -o secret-detector cmd/secret-detector/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o vexil cmd/vexil/main.go
 
 # Final stage
 FROM alpine:latest
 
-# Install ca-certificates in case the tool needs to make HTTPS requests
-RUN apk --no-cache add ca-certificates
+# Install ca-certificates and git (required for --git-aware)
+RUN apk --no-cache add ca-certificates git
 
 WORKDIR /root/
 
 # Copy the binary from the build stage
-COPY --from=builder /app/secret-detector .
+COPY --from=builder /app/vexil .
 
 # Default command
-ENTRYPOINT ["./secret-detector"]
+ENTRYPOINT ["./vexil"]
