@@ -92,6 +92,27 @@ func DefaultPatterns() []Pattern {
 			Regex:  regexp.MustCompile(`(?i)(postgres|mysql|mongodb|redis|amqp):\/\/[^:]+:[^@\s]{8,}@`),
 			Redact: redactValue,
 		},
+		{
+			Name:       "Jupyter Output Token",
+			Regex:      regexp.MustCompile(`(?i)"text/plain":\s*\[.*?(ghp_|AKIA|hvs\.|eyJ)[A-Za-z0-9_\-\.]{20,}`),
+			Redact:     redactValue,
+			MinEntropy: 3.5,
+			valueRegex: regexp.MustCompile(`(?i)"text/plain":\s*\[.*?((?:ghp_|AKIA|hvs\.|eyJ)[A-Za-z0-9_\-\.]{20,})`),
+		},
+		{
+			Name:       "Gradle/Maven Repository Credentials",
+			Regex:      regexp.MustCompile(`(?i)(username|password|secret)\s*[:=]\s*['"]([^\s'"]{8,})['"]`),
+			Redact:     redactValue,
+			MinEntropy: 3.2,
+			valueRegex: regexp.MustCompile(`(?i)(?:username|password|secret)\s*[:=]\s*['"]([^\s'"]{8,})['"]`),
+		},
+		{
+			Name:       "GitHub Actions Env Secret",
+			Regex:      regexp.MustCompile(`(?i)env:\s*\n\s+\w+:\s*\$?\{?\{?secrets\.\w+\}?\}?|(?i)(\w+):\s*['"]?(ghp_|hvs\.|AKIA|eyJ)[A-Za-z0-9_\-\.]{20,}['"]?`),
+			Redact:     redactValue,
+			MinEntropy: 3.5,
+			valueRegex: regexp.MustCompile(`(?i)(?:(?:env:\s*\n\s+\w+:\s*(\$?\{?\{?secrets\.\w+\}?\}?))|(?:(?:\w+):\s*['"]?((?:ghp_|hvs\.|AKIA|eyJ)[A-Za-z0-9_\-\.]{20,})['"]?))`),
+		},
 	}
 }
 

@@ -37,6 +37,21 @@ func TestDetect(t *testing.T) {
 			content: "# This is a config file\nfoo: bar",
 			want:    0,
 		},
+		{
+			name:    "Jupyter Output Token",
+			content: `"text/plain": [ "AKIAIOSFODNN7EXAMPLE12" ]`,
+			want:    1,
+		},
+		{
+			name:    "Gradle Repository Credentials",
+			content: `password="superSecretP4ssw0rd!"`,
+			want:    3, // Matches Infrastructure Password, Kafka JAAS, and Gradle credentials
+		},
+		{
+			name:    "GitHub Actions Env Token",
+			content: `  token: "ghp_1234567890abcdef1234567890abcdef123456"`,
+			want:    2, // Matches GitHub Token and CI/CD Env Token
+		},
 	}
 
 	d := New(nil)
