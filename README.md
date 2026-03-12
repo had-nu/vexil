@@ -56,13 +56,13 @@ docker compose run vexil -dir /src -format json
 # SARIF output (Universal dashboard compatibility)
 ./vexil -dir . -format sarif
 
-# Git-Aware History Scan (v3.0+)
+# Git-Aware History Scan (v2.4.0+)
 ./vexil -git-aware
 ```
 
-## The Vexil v3.0 Risk Model
+## The Vexil v2.4.0 Risk Model
 
-Vexil v3.0 transitions from binary detection to a **Multidimensional Risk Model**, providing high-fidelity signals for automated security gates:
+Vexil v2.4.0 transitions from binary detection to a **Multidimensional Risk Model**, providing high-fidelity signals for automated security gates:
 
 1. **Spatial Exposure (where):** Automatically classifies the file path risk (e.g., `ci_config` vs `test_fixture`).
 2. **Temporal Exposure (when):** Scans the entire git history to detect secrets deleted in the past.
@@ -89,12 +89,12 @@ Found 1 potential secrets:
     Match: aws_secret_access_key = [REDACTED]
 ```
 
-**JSON Output (v3.0.0):**
+**JSON Output (v2.4.0):**
 ```json
 {
   "scan_metadata": {
     "tool": "vexil",
-    "version": "3.0.0",
+    "version": "2.4.0",
     "timestamp": "2026-03-11T23:07:11Z",
     "files_scanned": 57,
     "files_with_findings": 10,
