@@ -11,16 +11,21 @@ import (
 
 // reportFinding is the safe, serializable representation of a Finding.
 type reportFinding struct {
-	FilePath             string  `json:"file_path"`
-	LineNumber           int     `json:"line_number"`
-	SecretType           string  `json:"secret_type"`
-	RedactedValue        string  `json:"redacted_value"`
-	ValueHash            string  `json:"value_hash"`
-	Entropy              float64 `json:"entropy,omitempty"`
-	Confidence           string  `json:"confidence,omitempty"`
-	ExposureContext      string  `json:"exposure_context,omitempty"`
-	RecencyTier          string  `json:"recency_tier,omitempty"`
-	DuplicateAcrossFiles bool    `json:"duplicate_across_files,omitempty"`
+	FilePath             string   `json:"file_path"`
+	LineNumber           int      `json:"line_number"`
+	SecretType           string   `json:"secret_type"`
+	SecretClass          string   `json:"secret_class,omitempty"`
+	RedactedValue        string   `json:"redacted_value"`
+	ValueHash            string   `json:"value_hash"`
+	Entropy              float64  `json:"entropy,omitempty"`
+	StructuralValid      *bool    `json:"structural_valid,omitempty"`
+	Confidence           string   `json:"confidence,omitempty"`
+	ExposureContext      string   `json:"exposure_context,omitempty"`
+	RecencyTier          string   `json:"recency_tier,omitempty"`
+	DuplicateAcrossFiles bool     `json:"duplicate_across_files,omitempty"`
+	ComplianceControls   []string `json:"compliance_controls,omitempty"`
+	BlastRadius          string   `json:"blast_radius,omitempty"`
+	RemediationSteps     []string `json:"remediation_steps,omitempty"`
 }
 
 func computeCrossReferences(findings []types.Finding) map[string]bool {
@@ -50,13 +55,18 @@ func toReportFindings(findings []types.Finding, dupMap map[string]bool) []report
 			FilePath:             f.FilePath,
 			LineNumber:           f.LineNumber,
 			SecretType:           f.SecretType,
+			SecretClass:          f.SecretClass,
 			RedactedValue:        f.RedactedValue,
 			ValueHash:            f.ValueHash,
 			Entropy:              f.Entropy,
+			StructuralValid:      f.StructuralValid,
 			Confidence:           f.Confidence,
 			ExposureContext:      f.ExposureContext,
 			RecencyTier:          f.RecencyTier,
 			DuplicateAcrossFiles: dupMap[f.ValueHash],
+			ComplianceControls:   f.ComplianceControls,
+			BlastRadius:          f.BlastRadius,
+			RemediationSteps:     f.RemediationSteps,
 		}
 	}
 	return out
@@ -103,7 +113,7 @@ func reportJSON(w io.Writer, result types.ScanResult) error {
 	report := v2JSONReport{
 		ScanMetadata: scanMetadata{
 			Tool:                    "vexil",
-			Version:                 "3.0.0",
+			Version:                 "2.5.0",
 			Timestamp:               time.Now().UTC().Format(time.RFC3339),
 			FilesScanned:            result.FilesScanned,
 			FilesWithFindings:       filesWithFindings,

@@ -45,12 +45,22 @@ func TestDetect(t *testing.T) {
 		{
 			name:    "Gradle Repository Credentials",
 			content: `password="superSecretP4ssw0rd!"`,
-			want:    3, // Matches Infrastructure Password, Kafka JAAS, and Gradle credentials
+			want:    3, // Matches Infrastructure Password, Kafka JAAS, and Gradle credentials (all credential class)
 		},
 		{
 			name:    "GitHub Actions Env Token",
 			content: `  token: "ghp_1234567890abcdef1234567890abcdef123456"`,
-			want:    2, // Matches GitHub Token and CI/CD Env Token
+			want:    2, // Matches GitHub Token and CI/CD Env Token (both token class)
+		},
+		{
+			name:    "LDAP Bind Credential",
+			content: "ldap_password=my-ldap-password",
+			want:    3, // Matches Infrastructure Password, Kafka JAAS, and LDAP Bind Credential
+		},
+		{
+			name:    "SNMP Community",
+			content: "snmp_community: public_secret",
+			want:    1,
 		},
 	}
 
@@ -265,11 +275,6 @@ func TestFalsePositives(t *testing.T) {
 			content: "token: abcdefghabcdefghabcdefghab", // 32 chars, 8 unique → 3.0 bits
 		},
 		{
-			// Common documentation example value.
-			name:    "secret with repetitive padded value is not a secret",
-			content: "secret: aaaaaaaaaaaaaaaa",
-		},
-		{
 			// AWS Secret Access Key with a low-entropy placeholder.
 			name:    "aws_secret_access_key with repeated value is not a secret",
 			content: "aws_secret_access_key = AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
@@ -278,6 +283,10 @@ func TestFalsePositives(t *testing.T) {
 			// Generic API key whose value is all lowercase ascii — entropy ~4.7 but we also test a known low-entropy repeated string.
 			name:    "api_key with all-same-char 32-char value is not a secret",
 			content: "api_key = bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+		},
+		{
+			name:    "AWS Access Key ID with invalid length is not a secret",
+			content: "AKIAINVALID", // Too short
 		},
 	}
 
@@ -381,6 +390,62 @@ func TestValueHashStability(t *testing.T) {
 			}
 			if len(got) != 16 {
 				t.Errorf("hashValue(%q) length = %d, want 16", tt.value, len(got))
+			}
+		})
+	}
+}
+
+func TestStructuralValidation(t *testing.T) {
+	d := New(nil)
+
+	tests := []struct {
+		name           string
+		content        string
+		wantConfidence string
+		wantValid      bool
+	}{
+		{
+			name:           "Valid AWS Access Key ID - High (raised from High/Critical)",
+			content:        "AKIAIOSFODNN7EXAMPLE", // Matches AKIA prefix + 16 chars
+			wantConfidence: "Critical",
+			wantValid:      true,
+		},
+		{
+			name:           "Invalid JWT - Lowered confidence (missing alg)",
+			content:        "eyJmYWlsIjp0cnVlfQ.payload_12345.signature_123", // Matches regex but lacks 'alg' in header
+			wantConfidence: "High",                           // Default Critical -> Lowered to High
+			wantValid:      false,
+		},
+		{
+			name:           "Valid GitHub Token",
+			content:        "ghp_1234567890abcdef1234567890abcdef123456",
+			wantConfidence: "Critical",
+			wantValid:      true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			findings, err := d.Detect([]byte(tt.content))
+			if err != nil {
+				t.Fatalf("Detect() error = %v", err)
+			}
+			if len(findings) == 0 {
+				t.Fatalf("expected at least one finding for %q", tt.name)
+			}
+
+			found := false
+			for _, f := range findings {
+				if f.StructuralValid != nil && *f.StructuralValid == tt.wantValid {
+					if f.Confidence != tt.wantConfidence {
+						t.Errorf("Finding.Confidence = %q, want %q", f.Confidence, tt.wantConfidence)
+					}
+					found = true
+					break
+				}
+			}
+			if !found {
+				t.Errorf("no finding with expected StructuralValid=%v found", tt.wantValid)
 			}
 		})
 	}

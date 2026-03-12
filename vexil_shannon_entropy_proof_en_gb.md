@@ -92,3 +92,14 @@ The chained usage (Vexil $\rightarrow$ Wardex) converts fallible boolean outputs
 
 ---
 **Thesis Point:** *"Detecting secrets by pure regex is a structural classifier lacking a probabilistic model — any banal token resting on the syntactic houses of the regex is instantly equalised as critical suspicion. The superimposition of Shannon Entropy (Vexil) provides an irrefutable theoretical axis: the product of a CSPRNG is, guided by its fundamental cryptology, resistant to uniform compressibility. Conversely, human lexical construction is dependent on structures, rules and repetitions. This discrepancy between computational uniformity and the predictability structured by cognition constructs a measurable chasm of geometric separation. Exploring a deterministic threshold between these axioms repudiates empirical intuition and translates the unshakeable essence of the Coding Theorem and the limitations in behavioural prediction pioneered by Shannon and Bonneau."*
+
+---
+
+## 6. 2026 Addendum: Domain Bifurcation (Tokens vs. Credentials)
+
+As of Vexil v2.5.0, we introduce the formal distinction between `token_class` and `credential_class` secrets. 
+
+*   **Tokens** (AWS Keys, JWTs, Vault Tokens) follow the stochastic CSPRNG model described above. For these, Shannon Entropy remains the primary filter against human noise.
+*   **Credentials** (Infrastructure Passwords, SNMP Community Strings, LDAP Binds) do not necessarily originate from a uniform distribution. A user-defined password might be structurally simple but operationally critical. 
+
+Consequently, for `credential_class` patterns, Vexil bypasses the entropy gate. The signal-to-noise ratio is maintained through tighter regex constraints and the introduction of **Offline Structural Validators**, which verify the consistency of the match against expected formats (e.g., specific prefixes or character sets) without requiring local randomness. This bifurcation ensures that Vexil remains a high-precision tool even in air-gapped environments where non-random credentials are prevalent.
