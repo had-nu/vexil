@@ -2,6 +2,8 @@ package detector
 
 import (
 	"crypto/sha256"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"math"
 	"regexp"
@@ -38,81 +40,139 @@ func hashValue(v string) string {
 func DefaultPatterns() []Pattern {
 	return []Pattern{
 		{
-			Name:   "AWS Access Key ID",
-			Regex:  regexp.MustCompile(`(A3T[A-Z0-9]|AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}`),
-			Redact: nil,
+			Name:                "AWS Access Key ID",
+			SecretClass:         "token",
+			Regex:               regexp.MustCompile(`(A3T[A-Z0-9]|AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}`),
+			Redact:              nil,
+			StructuralValidator: validateAWSKeyID,
 		},
 		{
-			Name:       "AWS Secret Access Key",
-			Regex:      regexp.MustCompile(`(?i)aws_secret_access_key['"?]?\s*(=|:)\s*['"]?[A-Za-z0-9\/+=]{40}['"]?`),
-			Redact:     redactValue,
-			MinEntropy: 3.5,
-			valueRegex: regexp.MustCompile(`(?i)aws_secret_access_key['"]?\s*(=|:)\s*['"]?([A-Za-z0-9\/+=]{40})['"]?`),
+			Name:                "AWS Secret Access Key",
+			SecretClass:         "token",
+			Regex:               regexp.MustCompile(`(?i)aws_secret_access_key['"?]?\s*(=|:)\s*['"]?[A-Za-z0-9\/+=]{40}['"]?`),
+			Redact:              redactValue,
+			MinEntropy:          3.5,
+			valueRegex:          regexp.MustCompile(`(?i)aws_secret_access_key['"]?\s*(=|:)\s*['"]?([A-Za-z0-9\/+=]{40})['"]?`),
 		},
 		{
-			Name:   "Private Key",
-			Regex:  regexp.MustCompile(`-----BEGIN ((EC|PGP|DSA|RSA|OPENSSH) )?PRIVATE KEY( BLOCK)?-----`),
-			Redact: nil,
+			Name:                "Private Key",
+			SecretClass:         "token",
+			Regex:               regexp.MustCompile(`-----BEGIN ((EC|PGP|DSA|RSA|OPENSSH) )?PRIVATE KEY( BLOCK)?-----`),
+			Redact:              nil,
+			StructuralValidator: validatePrivateKey,
 		},
 		{
-			Name:       "Generic API Key",
-			Regex:      regexp.MustCompile(`(?i)(api_key|apikey|secret|token)['"]?\s*(=|:)\s*['"]?[a-zA-Z0-9]{16,64}['"]?`),
-			Redact:     redactValue,
-			MinEntropy: 3.5,
-			valueRegex: regexp.MustCompile(`(?i)(?:api_key|apikey|secret|token)['"]?\s*(?:=|:)\s*['"]?([a-zA-Z0-9]{16,64})['"]?`),
+			Name:                "Generic API Key",
+			SecretClass:         "token",
+			Regex:               regexp.MustCompile(`(?i)(api_key|apikey|secret|token)['"]?\s*(=|:)\s*['"]?[a-zA-Z0-9]{16,64}['"]?`),
+			Redact:              redactValue,
+			MinEntropy:          3.5,
+			valueRegex:          regexp.MustCompile(`(?i)(?:api_key|apikey|secret|token)['"]?\s*(?:=|:)\s*['"]?([a-zA-Z0-9]{16,64})['"]?`),
 		},
 		{
-			Name:   "HashiCorp Vault Token",
-			Regex:  regexp.MustCompile(`\b(hvs\.|hvb\.|s\.)[A-Za-z0-9_\-]{20,}`),
-			Redact: nil,
+			Name:                "HashiCorp Vault Token",
+			SecretClass:         "token",
+			Regex:               regexp.MustCompile(`\b(hvs\.|hvb\.|s\.)[A-Za-z0-9_\-]{20,}`),
+			Redact:              nil,
+			StructuralValidator: validateVaultToken,
 		},
 		{
-			Name:   "GitHub Token",
-			Regex:  regexp.MustCompile(`\b(ghp_|gho_|ghs_|ghu_|github_pat_)[A-Za-z0-9_]{36,}`),
-			Redact: nil,
+			Name:                "GitHub Token",
+			SecretClass:         "token",
+			Regex:               regexp.MustCompile(`\b(ghp_|gho_|ghs_|ghu_|github_pat_)[A-Za-z0-9_]{36,}`),
+			Redact:              nil,
+			StructuralValidator: validateGitHubToken,
 		},
 		{
-			Name:       "Infrastructure Password",
-			Regex:      regexp.MustCompile(`(?i)(password|passwd|pwd|secret)\s*(=|:)\s*['"]?[^\s'"]{8,}['"]?`),
-			Redact:     redactValue,
-			MinEntropy: 3.2,
+			Name:        "Infrastructure Password",
+			SecretClass: "credential",
+			Regex:       regexp.MustCompile(`(?i)(password|passwd|pwd)\s*(=|:)\s*['"]?[^\s'"]{8,}['"]?`),
+			Redact:      redactValue,
+			MinEntropy:  0.0,
 		},
 		{
-			Name:       "Kafka JAAS Password",
-			Regex:      regexp.MustCompile(`password\s*=\s*["']?[^\s"';]{8,}["']?`),
-			Redact:     redactValue,
-			MinEntropy: 3.0,
+			Name:        "Kafka JAAS Password",
+			SecretClass: "credential",
+			Regex:       regexp.MustCompile(`password\s*=\s*["']?[^\s"';]{8,}["']?`),
+			Redact:      redactValue,
+			MinEntropy:  0.0,
 		},
 		{
-			Name:   "JSON Web Token",
-			Regex:  regexp.MustCompile(`eyJ[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}`),
-			Redact: nil,
+			Name:                "JSON Web Token",
+			SecretClass:         "token",
+			Regex:               regexp.MustCompile(`eyJ[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}`),
+			Redact:              nil,
+			StructuralValidator: validateJWT,
 		},
 		{
-			Name:   "Connection String with Credentials",
-			Regex:  regexp.MustCompile(`(?i)(postgres|mysql|mongodb|redis|amqp):\/\/[^:]+:[^@\s]{8,}@`),
-			Redact: redactValue,
+			Name:        "Connection String with Credentials",
+			SecretClass: "credential",
+			Regex:       regexp.MustCompile(`(?i)(postgres|mysql|mongodb|redis|amqp):\/\/[^:]+:[^@\s]{8,}@`),
+			Redact:      redactValue,
 		},
 		{
-			Name:       "Jupyter Output Token",
-			Regex:      regexp.MustCompile(`(?i)"text/plain":\s*\[.*?(ghp_|AKIA|hvs\.|eyJ)[A-Za-z0-9_\-\.]{20,}`),
-			Redact:     redactValue,
-			MinEntropy: 3.5,
-			valueRegex: regexp.MustCompile(`(?i)"text/plain":\s*\[.*?((?:ghp_|AKIA|hvs\.|eyJ)[A-Za-z0-9_\-\.]{20,})`),
+			Name:        "Jupyter Output Token",
+			SecretClass: "token",
+			Regex:       regexp.MustCompile(`(?i)"text/plain":\s*\[.*?(ghp_|AKIA|hvs\.|eyJ)[A-Za-z0-9_\-\.]{20,}`),
+			Redact:      redactValue,
+			MinEntropy:  3.5,
+			valueRegex:  regexp.MustCompile(`(?i)"text/plain":\s*\[.*?((?:ghp_|AKIA|hvs\.|eyJ)[A-Za-z0-9_\-\.]{20,})`),
 		},
 		{
-			Name:       "Gradle/Maven Repository Credentials",
-			Regex:      regexp.MustCompile(`(?i)(username|password|secret)\s*[:=]\s*['"]([^\s'"]{8,})['"]`),
-			Redact:     redactValue,
-			MinEntropy: 3.2,
-			valueRegex: regexp.MustCompile(`(?i)(?:username|password|secret)\s*[:=]\s*['"]([^\s'"]{8,})['"]`),
+			Name:        "Gradle/Maven Repository Credentials",
+			SecretClass: "credential",
+			Regex:       regexp.MustCompile(`(?i)(username|password|secret)\s*[:=]\s*['"]([^\s'"]{8,})['"]`),
+			Redact:      redactValue,
+			MinEntropy:  0.0,
+			valueRegex:  regexp.MustCompile(`(?i)(?:username|password|secret)\s*[:=]\s*['"]([^\s'"]{8,})['"]`),
 		},
 		{
-			Name:       "GitHub Actions Env Secret",
-			Regex:      regexp.MustCompile(`(?i)env:\s*\n\s+\w+:\s*\$?\{?\{?secrets\.\w+\}?\}?|(?i)(\w+):\s*['"]?(ghp_|hvs\.|AKIA|eyJ)[A-Za-z0-9_\-\.]{20,}['"]?`),
-			Redact:     redactValue,
-			MinEntropy: 3.5,
-			valueRegex: regexp.MustCompile(`(?i)(?:(?:env:\s*\n\s+\w+:\s*(\$?\{?\{?secrets\.\w+\}?\}?))|(?:(?:\w+):\s*['"]?((?:ghp_|hvs\.|AKIA|eyJ)[A-Za-z0-9_\-\.]{20,})['"]?))`),
+			Name:        "GitHub Actions Env Secret",
+			SecretClass: "token",
+			Regex:       regexp.MustCompile(`(?i)env:\s*\n\s+\w+:\s*\$?\{?\{?secrets\.\w+\}?\}?|(?i)(\w+):\s*['"]?(ghp_|hvs\.|AKIA|eyJ)[A-Za-z0-9_\-\.]{20,}['"]?`),
+			Redact:      redactValue,
+			MinEntropy:  3.5,
+			valueRegex:  regexp.MustCompile(`(?i)(?:(?:env:\s*\n\s+\w+:\s*(\$?\{?\{?secrets\.\w+\}?\}?))|(?:(?:\w+):\s*['"]?((?:ghp_|hvs\.|AKIA|eyJ)[A-Za-z0-9_\-\.]{20,})['"]?))`),
+		},
+		{
+			Name:        "LDAP Bind Credential",
+			SecretClass: "credential",
+			Regex:       regexp.MustCompile(`(?i)(ldap_password|bind_password|ldap_bind_pw|ad_password)['"']?\s*(=|:)\s*['"']?[^\s'"]{4,128}['"']?`),
+			Redact:      redactValue,
+			MinEntropy:  0.0,
+			valueRegex:  regexp.MustCompile(`(?i)(?:ldap_password|bind_password|ldap_bind_pw|ad_password)['"']?\s*(?:=|:)\s*['"']?([^\s'"]{4,128})['"']?`),
+		},
+		{
+			Name:        "Certificate Store Password",
+			SecretClass: "credential",
+			Regex:       regexp.MustCompile(`(?i)(keystore_password|truststore_password|keystore_pass|truststore_pass|ks_password|jks_password|pkcs12_password)['"']?\s*(=|:)\s*['"']?[^\s'"]{4,128}['"']?`),
+			Redact:      redactValue,
+			MinEntropy:  0.0,
+			valueRegex:  regexp.MustCompile(`(?i)(?:keystore_password|truststore_password|keystore_pass|truststore_pass|ks_password|jks_password|pkcs12_password)['"']?\s*(?:=|:)\s*['"']?([^\s'"]{4,128})['"']?`),
+		},
+		{
+			Name:        "SNMP Community String",
+			SecretClass: "credential",
+			Regex:       regexp.MustCompile(`(?i)(snmp_community|community_string|snmpv2_community|read_community|write_community)['"']?\s*(=|:)\s*['"']?[^\s'"]{4,64}['"']?`),
+			Redact:      redactValue,
+			MinEntropy:  0.0,
+			valueRegex:  regexp.MustCompile(`(?i)(?:snmp_community|community_string|snmpv2_community|read_community|write_community)['"']?\s*(?:=|:)\s*['"']?([^\s'"]{4,64})['"']?`),
+		},
+		{
+			Name:                "Kubernetes Service Account Token",
+			SecretClass:         "token",
+			Regex:               regexp.MustCompile(`eyJhbGciOiJSUzI1NiIsImtpZCI6[A-Za-z0-9\-_]{20,}\.eyJ[A-Za-z0-9\-_]{20,}\.[A-Za-z0-9\-_]{20,}`),
+			Redact:              nil,
+			MinEntropy:          3.5,
+			StructuralValidator: validateJWT,
+		},
+		{
+			Name:        "Ansible Vault Password",
+			SecretClass: "credential",
+			Regex:       regexp.MustCompile(`(?i)(vault_password|vault_pass|ansible_vault_password|vault_password_file)['"']?\s*(=|:)\s*['"']?[^\s'"]{4,256}['"']?`),
+			Redact:      redactValue,
+			MinEntropy:  0.0,
+			valueRegex:  regexp.MustCompile(`(?i)(?:vault_password|vault_pass|ansible_vault_password)['"']?\s*(?:=|:)\s*['"']?([^\s'"]{4,256})['"']?`),
 		},
 	}
 }
@@ -192,11 +252,22 @@ func (d *Detector) checkPattern(pattern *Pattern, line string, lineNumber int) (
 	confidence := "Critical"
 
 	// Entropy check: measure randomness to eliminates false positives.
-	if pattern.MinEntropy > 0 {
+	if pattern.MinEntropy > 0 && pattern.SecretClass == "token" {
 		if ent < pattern.MinEntropy {
 			return types.Finding{}, false
 		}
 		confidence = calculateConfidence(ent)
+	}
+
+	var structuralValid *bool
+	if pattern.StructuralValidator != nil {
+		valid := pattern.StructuralValidator(value)
+		structuralValid = &valid
+		if valid {
+			confidence = raiseConfidence(confidence)
+		} else {
+			confidence = lowerConfidence(confidence)
+		}
 	}
 
 	redacted := "[REDACTED]"
@@ -205,13 +276,15 @@ func (d *Detector) checkPattern(pattern *Pattern, line string, lineNumber int) (
 	}
 
 	return types.Finding{
-		LineNumber:    lineNumber,
-		SecretType:    pattern.Name,
-		Value:         strings.TrimSpace(line),
-		ValueHash:     hashValue(value),
-		RedactedValue: redacted,
-		Entropy:       ent,
-		Confidence:    confidence,
+		LineNumber:      lineNumber,
+		SecretType:      pattern.Name,
+		SecretClass:     pattern.SecretClass,
+		Value:           strings.TrimSpace(line),
+		ValueHash:       hashValue(value),
+		RedactedValue:   redacted,
+		Entropy:         ent,
+		StructuralValid: structuralValid,
+		Confidence:      confidence,
 	}, true
 }
 
@@ -226,4 +299,84 @@ func calculateConfidence(entropy float64) string {
 		return "High"
 	}
 	return "Critical"
+}
+
+func raiseConfidence(conf string) string {
+	switch conf {
+	case "Low":
+		return "Medium"
+	case "Medium":
+		return "High"
+	case "High", "Critical":
+		return "Critical"
+	default:
+		return conf
+	}
+}
+
+func lowerConfidence(conf string) string {
+	switch conf {
+	case "Critical":
+		return "High"
+	case "High":
+		return "Medium"
+	case "Medium", "Low":
+		return "Low"
+	default:
+		return conf
+	}
+}
+
+// Structural Validators
+
+func validateAWSKeyID(v string) bool {
+	prefixes := []string{"AKIA", "ASIA", "AROA", "AGPA", "AIDA", "AIPA", "ANPA", "ANVA"}
+	for _, p := range prefixes {
+		if strings.HasPrefix(v, p) && len(v) == 20 && isUpperAlphanumeric(v[4:]) {
+			return true
+		}
+	}
+	return false
+}
+
+func validateGitHubToken(v string) bool {
+	validPrefixes := []string{"ghp_", "gho_", "ghs_", "ghu_", "github_pat_"}
+	for _, p := range validPrefixes {
+		if strings.HasPrefix(v, p) && len(v) >= 40 {
+			return true
+		}
+	}
+	return false
+}
+
+func validateJWT(v string) bool {
+	parts := strings.Split(v, ".")
+	if len(parts) != 3 {
+		return false
+	}
+	headerBytes, err := base64.RawURLEncoding.DecodeString(parts[0])
+	if err != nil {
+		return false
+	}
+	var header map[string]interface{}
+	return json.Unmarshal(headerBytes, &header) == nil && header["alg"] != nil
+}
+
+func validatePrivateKey(v string) bool {
+	return strings.Contains(v, "-----BEGIN") &&
+		strings.Contains(v, "PRIVATE KEY") &&
+		strings.Contains(v, "-----END")
+}
+
+func validateVaultToken(v string) bool {
+	return (strings.HasPrefix(v, "hvs.") || strings.HasPrefix(v, "s.")) && len(v) >= 24
+}
+
+func isUpperAlphanumeric(s string) bool {
+	for _, ch := range s {
+		if !((ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9')) {
+			return false
+		}
+	}
+	return true
 }

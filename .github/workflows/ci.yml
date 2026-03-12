@@ -14,13 +14,15 @@ jobs:
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
-      
+      with:
+        submodules: recursive
+
     - name: Setup Go
       uses: actions/setup-go@v5
       with:
         go-version: '1.21'
         check-latest: true
-        
+
     - name: Ensure Dependencies
       run: go mod download
 
@@ -32,8 +34,8 @@ jobs:
 
     - name: Static Analysis (Vet)
       run: go vet ./...
-      
+
     - name: Self-Scan for Hardcoded Secrets
       run: |
         go build -o vexil cmd/vexil/main.go
-        ./vexil -dir . -exclude=internal,testdata,doc,VEX.wiki,vexil,SPEC_vexil_v2.3-v3.0.md
+        ./vexil -dir . -exclude=internal,testdata,doc,vexil.wiki,vexil
