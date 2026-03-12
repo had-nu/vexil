@@ -1,4 +1,16 @@
-# Vexil
+<p align="center">
+  <img src="assets/icons/icon_128x128.png" alt="Vexil Logo" width="128">
+</p>
+
+<h1 align="center">Vexil</h1>
+
+<p align="center">
+  <a href="https://github.com/had-nu/vexil/releases"><img src="https://img.shields.io/badge/Version-2.5.0-purple?style=flat-square" alt="Version"></a>
+  <a href="https://golang.org"><img src="https://img.shields.io/badge/Go-1.25.7+-00ADD8?style=flat-square&logo=go" alt="Go"></a>
+  <img src="https://img.shields.io/badge/Wardex-Integrated-blueviolet?style=flat-square" alt="Wardex">
+  <img src="https://img.shields.io/badge/Foundry-Ready-purple?style=flat-square" alt="Foundry">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License"></a>
+</p>
 
 A Go-based, CI/CD-native tool designed to detect hardcoded secrets in files before they reach production. It focuses on an exceptionally high Signal-to-Noise Ratio (SNR), speed, and accuracy through mathematical entropy analysis and confidence scoring.
 
