@@ -10,13 +10,14 @@ import (
 	"github.com/had-nu/vexil/internal/types"
 )
 
-// Pattern defines a regex for a specific secret type and how to redact its match.
 type Pattern struct {
-	Name       string
-	Regex      *regexp.Regexp
-	Redact     func(match string) string
-	MinEntropy float64
-	valueRegex *regexp.Regexp
+	Name                string
+	Regex               *regexp.Regexp
+	Redact              func(match string) string
+	MinEntropy          float64
+	SecretClass         string              // "token" | "credential"
+	StructuralValidator func(string) bool   // nil if no offline validation available
+	valueRegex          *regexp.Regexp
 }
 
 // redactValue replaces the value portion of a key=value or key: value line.
