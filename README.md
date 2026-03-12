@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/banner.png" alt="Vexil Logo" width="128">
+  <img src="assets/banner_round.png" alt="Vexil Logo" width="512">
 </p>
 
 <h1 align="center">Vexil</h1>
@@ -8,8 +8,7 @@
   <a href="https://github.com/had-nu/vexil/releases"><img src="https://img.shields.io/badge/Version-2.5.0-purple?style=flat-square" alt="Version"></a>
   <a href="https://golang.org"><img src="https://img.shields.io/badge/Go-1.25.7+-00ADD8?style=flat-square&logo=go" alt="Go"></a>
   <img src="https://img.shields.io/badge/Wardex-Integrated-blueviolet?style=flat-square" alt="Wardex">
-  <img src="https://img.shields.io/badge/Foundry-Ready-purple?style=flat-square" alt="Foundry">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache-v2-green?style=flat-square" alt="License"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache--2.0-green?style=flat-square" alt="License"></a>
 </p>
 
 A Go-based, CI/CD-native tool designed to detect hardcoded secrets in files before they reach production. It focuses on an exceptionally high Signal-to-Noise Ratio (SNR), speed, and accuracy through mathematical entropy analysis and confidence scoring.
@@ -91,9 +90,9 @@ docker compose run vexil -dir /src -format json
 ./vexil -git-aware
 ```
 
-## The Vexil v2.4.0 Risk Model
+## The Vexil v2.5.0 Risk Model
 
-Vexil v2.4.0 transitions from binary detection to a **Multidimensional Risk Model**, providing high-fidelity signals for automated security gates:
+Vexil v2.5.0 transitions from binary detection to a **Multidimensional Risk Model**, providing high-fidelity signals for automated security gates:
 
 1. **Spatial Exposure (where):** Automatically classifies the file path risk (e.g., `ci_config` vs `test_fixture`).
 2. **Temporal Exposure (when):** Scans the entire git history to detect secrets deleted in the past.
@@ -120,12 +119,12 @@ Found 1 potential secrets:
     Match: aws_secret_access_key = [REDACTED]
 ```
 
-**JSON Output (v2.4.0):**
+**JSON Output (v2.5.0):**
 ```json
 {
   "scan_metadata": {
     "tool": "vexil",
-    "version": "2.4.0",
+    "version": "2.5.0",
     "timestamp": "2026-03-11T23:07:11Z",
     "files_scanned": 57,
     "files_with_findings": 10,
