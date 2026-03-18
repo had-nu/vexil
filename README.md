@@ -5,7 +5,7 @@
 <h1 align="center">Vexil</h1>
 
 <p align="center">
-  <a href="https://github.com/had-nu/vexil/releases"><img src="https://img.shields.io/badge/Version-2.5.0-purple?style=flat-square" alt="Version"></a>
+  <a href="https://github.com/had-nu/vexil/releases"><img src="https://img.shields.io/badge/Version-2.6.0-purple?style=flat-square" alt="Version"></a>
   <a href="https://golang.org"><img src="https://img.shields.io/badge/Go-1.25.7+-00ADD8?style=flat-square&logo=go" alt="Go"></a>
   <img src="https://img.shields.io/badge/Wardex-Integrated-blueviolet?style=flat-square" alt="Wardex">
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache--2.0-green?style=flat-square" alt="License"></a>
@@ -17,21 +17,17 @@ A Go-based, CI/CD-native tool designed to detect hardcoded secrets in files befo
 
 - **Security First:** Blocking leaks at the PR/Commit phase.
 - **Precision (Signal-to-Noise Ratio):** Developers shouldn't suffer from alert fatigue. If it's flagged as `Critical`, it is highly likely to be a real cryptographic secret.
-- **Direct Integration:** Built to connect seamlessly with advanced release gates (like Wardex) via JSON payloads and Confidence Scoring.
+- **Compliance Native:** Automated evidence generation for security frameworks (ISO27001, NIS2, DORA).
 
 ## Core Features
 
-- **Pattern Matching:** Native detection for:
-  - AWS Access Key IDs & Secret Access Keys
-  - Private Keys (RSA, DSA, EC, OPENSSH)
-  - Generic API Keys & Tokens
-- **Entropy Filtering:** Reduces false positives by measuring the Shannon entropy of matched values in bits/char. Generic patterns (`api_key`, `token`) only flag values that score above the human-readable threshold (3.5+ bits/char).
-- **Confidence Scoring:** Outputs the calculated entropy as a non-binary risk metric (`Low`, `Medium`, `High`, `Critical`).
-- **Contextual Awareness:** Classifies findings into exposure categories (Spatial Exposure) such as `application_code`, `ci_config`, or `test_fixture`.
-- **Git-Aware Scanning:** Optional `--git-aware` mode to scan the entire git history for leaked credentials.
-- **Credential Reuse Detection:** Identifies the same secret shared across multiple files via safe hashing.
-- **Fail-Fast:** Exits with a non-zero status code (`1`) if secrets are found.
-- **Format Agnostic & Heavyweight Performance:** Scans any text file recursively, powered by a concurrent worker pool. Validated for 100k+ lines with sub-second latency.
+- **Pattern Matching:** Native detection for AWS, Private Keys, and Generic API Tokens.
+- **Entropy Filtering:** Reduces false positives via Shannon entropy (threshold: 3.5+ bits/char).
+- **Compliance Enrichment (NEW):** Automatically maps findings to **ISO27001**, **NIS2**, **DORA**, and **IEC62443** controls.
+- **Exit Code Discipline (NEW):** Configurable gate thresholds with `--block-at`. Exits with `2` (Block) for critical findings or `1` (Warn) for lower-risk detections.
+- **Contextual Awareness:** Classifies findings into `ci_config`, `infra_config`, `ot_config`, etc.
+- **Git-Aware Scanning:** Optional `--git-aware` mode to scan the entire git history.
+- **Bounded Security:** Air-gap safe scanning with bounded file reads (10 MiB limit) and symlink guards.
 
 ## Installation
 
@@ -77,70 +73,53 @@ docker compose run vexil -dir /src -format json
 # General run on the working directory
 ./vexil
 
-# Pointing to a specific path
-./vexil -dir /path/to/project
+# Set blocking threshold (default: Critical)
+./vexil --block-at High
 
 # CI/CD / Machine-readable output
-./vexil -dir . -format json
+./vexil -format json
 
 # SARIF output (Universal dashboard compatibility)
-./vexil -dir . -format sarif
-
-# Git-Aware History Scan (v2.4.0+)
-./vexil -git-aware
+./vexil -format sarif
 ```
 
-## The Vexil v2.5.0 Risk Model
+## The Vexil v2.6.0 Risk Model
 
-Vexil v2.5.0 transitions from binary detection to a **Multidimensional Risk Model**, providing high-fidelity signals for automated security gates:
+Vexil v2.6.0 transitions from simple detection to a **Compliance-Ready Evidence Model**:
 
-1. **Spatial Exposure (where):** Automatically classifies the file path risk (e.g., `ci_config` vs `test_fixture`).
-2. **Temporal Exposure (when):** Scans the entire git history to detect secrets deleted in the past.
-3. **Lateral Exposure (who):** Detects if the same secret is reused across multiple files via `value_hash`.
+1. **Compliance Controls:** Findings are automatically tagged with regulatory controls (e.g., `ISO27001:A.8.12`).
+2. **Blast Radius:** Estimates the scope of impact (`pipeline`, `infrastructure`, `industrial`).
+3. **Remediation Steps:** Provides specific, offline-safe guidance for secret rotation and history cleanup.
+4. **Worst Confidence:** Emits a high-level `worst_confidence` signal for rapid decision making in release gates.
 
 ### Output Formats
 
-**Text UI:** (Minimalist and clean)
-```
-[15:57:47.426]     H(X) = -Σ P(x) log₂ P(x)
-              V E X I L
-              Entropic Secret Detector       |ψ⟩ = (1/√2)(|01⟩ - |10⟩) ↣ QKD
-
-    ⊢ ENGINE  : ONLINE
-    ⊢ MATH    : Shannon Entropy Thresholds
-    ⊢ CRYPTO  : RSA, EC, AES-GCM, HMAC
-
-Scanning . ...
-Found 1 potential secrets:
-
-[1] conf/aws-credentials.yaml:23
-    Type: AWS Secret Access Key
-    Confidence: Critical (Entropy: 4.66)
-    Match: aws_secret_access_key = [REDACTED]
-```
-
-**JSON Output (v2.5.0):**
+**JSON Output (v2.6.0):**
 ```json
 {
   "scan_metadata": {
     "tool": "vexil",
-    "version": "2.5.0",
-    "timestamp": "2026-03-11T23:07:11Z",
-    "files_scanned": 57,
-    "files_with_findings": 10,
-    "credential_reuse_detected": true,
+    "version": "2.6.0",
+    "timestamp": "2026-03-18T14:10:00Z",
+    "files_scanned": 142,
+    "files_with_findings": 1,
+    "worst_confidence": "Critical",
+    "credential_reuse_detected": false,
     "scan_errors": 0
   },
   "findings": [
     {
-      "file_path": "conf/aws-credentials.yaml",
-      "line_number": 23,
+      "file_path": ".github/workflows/deploy.yml",
+      "line_number": 42,
       "secret_type": "AWS Secret Access Key",
-      "redacted_value": "aws_secret_access_key = [REDACTED]",
-      "value_hash": "1a5d44a2dca19669",
-      "entropy": 4.66,
       "confidence": "Critical",
-      "exposure_context": "application_code"
+      "exposure_context": "ci_config",
+      "compliance_controls": ["ISO27001:A.8.12", "NIS2:Art.21(2)(e)", "DORA:Art.9(4)"],
+      "blast_radius": "pipeline",
+      "remediation_steps": [
+        "Remove from git history: git filter-repo ...",
+        "URGENT: rotate credential immediately"
+      ]
     }
   ]
 }
