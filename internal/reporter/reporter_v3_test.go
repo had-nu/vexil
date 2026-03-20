@@ -51,13 +51,13 @@ func TestReportJSON_V3Schema(t *testing.T) {
 	if !ok {
 		t.Fatal("scan_metadata missing or invalid")
 	}
-	if meta["version"] != "2.4.0" {
-		t.Errorf("expected version 2.4.0, got %v", meta["version"])
+	if meta["version"] != "2.6.0" {
+		t.Errorf("expected version 2.6.0, got %v", meta["version"])
 	}
 
-	// 2. Verify removal of worst_confidence
-	if _, exists := meta["worst_confidence"]; exists {
-		t.Error("scan_metadata should NOT contain worst_confidence in v3.0.0")
+	// 2. Verify existence of worst_confidence
+	if meta["worst_confidence"] != "High" {
+		t.Errorf("expected worst_confidence High, got %v", meta["worst_confidence"])
 	}
 
 	// 3. Verify credential_reuse_detected

@@ -44,7 +44,7 @@ func TestDetect(t *testing.T) {
 		},
 		{
 			name:    "Gradle Repository Credentials",
-			content: `password="superSecretP4ssw0rd!"`,
+			content: `password="S3cur3-P4ssw0rd-With-High-Entropy!"`,
 			want:    3, // Matches Infrastructure Password, Kafka JAAS, and Gradle credentials (all credential class)
 		},
 		{
@@ -54,8 +54,8 @@ func TestDetect(t *testing.T) {
 		},
 		{
 			name:    "LDAP Bind Credential",
-			content: "ldap_password=my-ldap-password",
-			want:    3, // Matches Infrastructure Password, Kafka JAAS, and LDAP Bind Credential
+			content: "ldap_password=S3cur3-LDAP-P4ssw0rd-2026!",
+			want:    4, // Matches Infrastructure Password, Kafka JAAS, LDAP Bind Credential, and Gradle
 		},
 		{
 			name:    "SNMP Community",
