@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/banner_round.png" alt="Vexil Logo" width="512">
+  <img src="assets/banner_round.png" alt="Vexil Logo" width="256">
 </p>
 
 <h1 align="center">Vexil</h1>
