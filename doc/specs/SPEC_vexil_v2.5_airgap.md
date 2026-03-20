@@ -20,7 +20,9 @@ The competitive landscape as of 2026 reveals the following:
 - **Gitleaks** — fast, customisable, no verification, no graduated confidence signal, no compliance output.
 - **Trivy** — broad-spectrum scanner. Secret scanning is a secondary function. No structural validation, no compliance mapping, not deployable as a static binary without container runtime in classified environments.
 
-The unoccupied position is specific: **a static binary, zero-egress secret scanner that produces graduated confidence, compliance-mapped, remediation-guided output for regulated environments where network-dependent tools either cannot run or run in a degraded state that makes them operationally irrelevant.**
+The unoccupied position is specific: **a static binary, zero-egress secret scanner that protects against accidental secret exposure by developers in regulated environments where network-dependent verification is forbidden or impossible.**
+
+This positioning addresses a very specific threat: **developer error**. It does not seek to replace runtime security monitoring or detect terminal-stage adversary actions in a compromised pipeline. By focusing exclusively on "catching the mistake before it leaves the machine," Vexil provides a high-SNR control that is operationally feasible in air-gapped zones.
 
 This specification defines three milestones — v2.5, v2.6, v3.0 — that systematically build towards this position.
 
@@ -28,7 +30,13 @@ This specification defines three milestones — v2.5, v2.6, v3.0 — that system
 
 > Vexil is a static-text scanner. It does not execute code, call external APIs, or reason about runtime state. Every feature must operate on text in files using patterns, mathematics, and deterministic logic. Features requiring network access, process execution, or semantic inference are out of scope by definition.
 
-This constraint is not a limitation — it is the product. In air-gapped environments, it is the only kind of scanner that can run at all.
+### Threat Model Clarity
+
+Vexil is a defense against **accidental data leakage**.
+- **In-scope**: A developer accidentally committing a valid AWS key, a database password, or a private key.
+- **Out-of-scope**: An adversary injecting a backdoored dependency, a compromised CI runner stealing secrets from memory, or a supply chain attack like SolarWinds/3CX.
+
+Acknowledging this narrow focus makes the tool more useful, not less. In air-gapped environments (OT/ICS, classified networks), preventing the accidental introduction of credentials into the source code is a primary compliance and security requirement that current general-purpose tools often fail to address with sufficient precision.
 
 ### Three target market profiles
 

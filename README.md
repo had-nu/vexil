@@ -5,148 +5,146 @@
 <h1 align="center">Vexil</h1>
 
 <p align="center">
-  <a href="https://github.com/had-nu/vexil/releases"><img src="https://img.shields.io/badge/Version-2.6.1-purple?style=flat-square" alt="Version"></a>
-  <a href="https://golang.org"><img src="https://img.shields.io/badge/Go-1.25.7+-00ADD8?style=flat-square&logo=go" alt="Go"></a>
-  <img src="https://img.shields.io/badge/Wardex-Integrated-blueviolet?style=flat-square" alt="Wardex">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache--2.0-green?style=flat-square" alt="License"></a>
+  <a href="https://github.com/had-nu/vexil/releases">
+    <img src="https://img.shields.io/badge/Version-2.6.1-purple?style=flat-square" alt="Version">
+  </a>
+  <a href="https://golang.org">
+    <img src="https://img.shields.io/badge/Go-1.25.7+-00ADD8?style=flat-square&logo=go" alt="Go">
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/License-Apache--2.0-green?style=flat-square" alt="License">
+  </a>
 </p>
 
-A Go-based, CI/CD-native tool designed to detect hardcoded secrets in files before they reach production. It focuses on an exceptionally high Signal-to-Noise Ratio (SNR), speed, and accuracy through mathematical entropy analysis and confidence scoring.
+A static secret scanner for CI/CD pipelines. Vexil catches hardcoded credentials
+before they reach a repository — the class of mistake where a developer commits an
+API key, a database password, or a private key into source control.
 
-## Philosophy
+That is its precise scope. It does not detect adversary activity in a compromised
+pipeline, runtime secret misuse, or misconfigured IAM policies. Tools that claim to
+do all of these things simultaneously tend to do none of them well.
 
-- **Security First:** Blocking leaks at the PR/Commit phase.
-- **Precision (Signal-to-Noise Ratio):** Developers shouldn't suffer from alert fatigue. If it's flagged as `Critical`, it is highly likely to be a real cryptographic secret.
-- **Compliance Native:** Automated evidence generation for security frameworks (ISO27001, NIS2, DORA).
+## What makes it different
 
-## Core Features
+Most secret scanners apply regex broadly and let developers suppress the noise.
+Vexil applies Shannon entropy as a mathematical gate before a finding is raised.
 
-- **Pattern Matching:** Native detection for AWS, Private Keys, and Generic API Tokens.
-- **Entropy Filtering:** Reduces false positives via Shannon entropy (threshold: 3.5+ bits/char).
-- **Compliance Enrichment (NEW):** Automatically maps findings to **ISO27001**, **NIS2**, **DORA**, and **IEC62443** controls.
-- **Exit Code Discipline (NEW):** Configurable gate thresholds with `--block-at`. Exits with `2` (Block) for critical findings or `1` (Warn) for lower-risk detections.
-- **Contextual Awareness:** Classifies findings into `ci_config`, `infra_config`, `ot_config`, etc.
-- **Git-Aware Scanning:** Optional `--git-aware` mode to scan the entire git history.
-- **Bounded Security:** Air-gap safe scanning with bounded file reads (10 MiB limit) and symlink guards.
+The premise: real cryptographic secrets are outputs of CSPRNGs and behave like
+uniform random variables — entropy approaching log₂(k) bits/char for their charset.
+Human-constructed strings (placeholders, test values, documentation examples) cannot
+simulate this. The distributions do not overlap in practice.
+
+This means `your_api_key_here` is silently discarded without any ignore-list entry.
+`x7Kp2mQnR9vLwZ4sXqY8nP3r` is flagged.
+
+The entropy gate applies to token-class secrets only. Credential-class secrets
+(passwords, LDAP bind credentials, SNMP community strings) do not originate from
+CSPRNGs — applying an entropy threshold to them produces structural false negatives.
+Vexil treats them differently by design.
+
+## Why zero external dependencies matter
+
+Most high-precision secret scanners verify findings by calling the issuing API.
+TruffleHog calls AWS GetCallerIdentity. GitGuardian sends findings to a SaaS platform.
+
+In regulated environments — air-gapped government networks, OT/ICS zones, financial
+pipelines with egress restrictions — these calls either cannot execute or violate
+policy. When network verification is disabled, precision collapses to the regex layer.
+
+Vexil has no verification layer to disable. It runs identically on a connected
+developer machine and on an isolated CI runner with no outbound access. The static
+binary requires no container runtime, no database download, no token.
+
+## What Vexil produces
+
+A finding in Vexil output answers: *what was found, where, how confident, and what
+the exposure context is.* It does not answer: *is this secret currently active, who
+has used it, or what an attacker would do with it.* Those are different questions
+requiring different tools.
+
+The compliance fields (`compliance_controls`, `blast_radius`, `remediation_steps`)
+are governance annotations — they map a finding to the control frameworks that
+require you to address it, and provide offline-executable remediation steps. They are
+evidence artefacts for audit cycles, not threat intelligence.
+
+## Usage
+```bash
+# Scan working directory
+./vexil
+
+# Set the confidence level that blocks the pipeline (default: Critical)
+./vexil --block-at High
+
+# JSON output for downstream tooling
+./vexil -format json
+
+# SARIF output for dashboard integration
+./vexil -format sarif
+
+# Scan entire git history (shallow clone warning emitted automatically)
+./vexil --git-aware
+
+# Print version
+./vexil --version
+```
+
+Exit codes: `0` clean, `1` findings below block threshold, `2` block threshold met,
+`3` tool error. The distinction between 1 and 2 is intentional — it lets downstream
+gates apply their own policy rather than treating all findings as identical.
 
 ## Installation
-
-> [!IMPORTANT]
-> **Version History Reconstruction (v2.5.0 Patch):**
-> We have recently performed a major cleanup and alignment of the repository's Git tags and version history to ensure consistency with our documentation. 
-> To avoid local conflicts and ensure you are using the correct release path, we recommend a clean reinstallation:
-> 
-> ```bash
-> # Remove your current local copy
-> rm -rf vexil
-> 
-> # Clone the fresh, aligned repository
-> git clone https://github.com/had-nu/vexil.git
-> cd vexil
-> 
-> # Build the latest stable version (v2.6.1)
-> go build -o vexil cmd/vexil/main.go
-> ```
-
-To install the latest version manually:
-
 ```bash
 go install github.com/had-nu/vexil/cmd/vexil@latest
 ```
 
-### Docker
-
+Static binary for air-gapped environments:
 ```bash
-# Build the image
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+  go build -ldflags="-s -w" -trimpath \
+  -o vexil-static ./cmd/vexil
+```
+
+### Docker
+```bash
 docker compose build
-
-# Run a scan in the current directory via volume binding
-docker compose run vexil
-
-# Scan with JSON format for CI pipelines
 docker compose run vexil -dir /src -format json
 ```
 
-## Usage
+## Pattern coverage
 
+18 patterns across two classes:
+
+**Token-class** (entropy-filtered): AWS access keys and secrets, GitHub tokens,
+HashiCorp Vault tokens, JWTs, Kubernetes service account tokens, Jupyter output
+tokens, GitHub Actions env secrets, private keys.
+
+**Credential-class** (regex-only, no entropy gate): infrastructure passwords,
+Kafka JAAS passwords, connection strings with embedded credentials,
+Gradle/Maven repository credentials, LDAP bind credentials, certificate store
+passwords, SNMP community strings, Ansible Vault passwords.
+
+The credential-class patterns are specifically chosen for regulated environments
+where Java middleware, network management tooling, and directory services are
+common deployment targets.
+
+## Testing
 ```bash
-# General run on the working directory
-./vexil
-
-# Set blocking threshold (default: Critical)
-./vexil --block-at High
-
-# CI/CD / Machine-readable output
-./vexil -format json
-
-# SARIF output (Universal dashboard compatibility)
-./vexil -format sarif
-
-# Print version and exit
-./vexil --version
+go test -v -race ./...
 ```
 
-## The Vexil v2.6.1 Risk Model
+The test suite validates entropy boundary behaviour directly: inputs with fewer
+than 8 distinct characters or repeating patterns are confirmed as non-findings.
+High-entropy strings above the 3.5 bit/char threshold are confirmed as findings.
+Structural validators are tested independently of entropy.
 
-Vexil v2.6.1 transitions from simple detection to a **Compliance-Ready Evidence Model**:
+## What Vexil does not do
 
-1. **Compliance Controls:** Findings are automatically tagged with regulatory controls (e.g., `ISO27001:A.8.12`).
-2. **Blast Radius:** Estimates the scope of impact (`pipeline`, `infrastructure`, `industrial`).
-3. **Remediation Steps:** Provides specific, offline-safe guidance for secret rotation and history cleanup.
-4. **Worst Confidence:** Emits a high-level `worst_confidence` signal for rapid decision making in release gates.
+- Detect secrets introduced by a compromised build dependency
+- Verify whether a detected credential is currently active
+- Identify adversary activity in a pipeline that is already compromised
+- Replace runtime security monitoring (Falco, Wiz, Datadog)
+- Replace vulnerability scanning (Grype, Trivy, Dependabot)
 
-### Output Formats
-
-**JSON Output (v2.6.1):**
-```json
-{
-  "scan_metadata": {
-    "tool": "vexil",
-    "version": "2.6.1",
-    "timestamp": "2026-03-18T14:10:00Z",
-    "files_scanned": 142,
-    "files_with_findings": 1,
-    "worst_confidence": "Critical",
-    "credential_reuse_detected": false,
-    "scan_errors": 0
-  },
-  "findings": [
-    {
-      "file_path": ".github/workflows/deploy.yml",
-      "line_number": 42,
-      "secret_type": "AWS Secret Access Key",
-      "confidence": "Critical",
-      "exposure_context": "ci_config",
-      "compliance_controls": ["ISO27001:A.8.12", "NIS2:Art.21(2)(e)", "DORA:Art.9(4)"],
-      "blast_radius": "pipeline",
-      "remediation_steps": [
-        "Remove from git history: git filter-repo ...",
-        "URGENT: rotate credential immediately"
-      ]
-    }
-  ]
-}
-```
-
-## How Entropy Filtering Works
-
-Broad regex patterns match both actual secrets and development placeholders. 
-
-Vexil applies **Shannon entropy** (`H = -Σ p·log₂p`) to measure output randomness. Real cryptographic functions (UUIDs, base64-encoded hashes) score **above 3.5 bits/char**. Plaintext or repetitive placeholder strings score below 3.0. This mathematical filtering provides Vexil's high **Signal-to-Noise Ratio (SNR)**, allowing it to discard low-entropy noise.
-
-| Value | Entropy | Flagged? |
-|---|---|---|
-| `changemechangemechangemech` | ~2.8 bits | ✗ No |
-| `abcdefghabcdefghabcdefghab` | 3.0 bits | ✗ No |
-| `x7Kp2mQnR9vLwZ4sXqY8nP3r` | ~4.5 bits | ✓ Yes |
-
-Specific patterns (like an AWS Access Key ID starting with "AKIA") automatically skip the entropy check and are flagged as `Critical` deterministically.
-
-## Developing & Testing
-
-```bash
-# Run the entire test suite
-go test -v ./...
-```
-
-Tests ensure mathematically accurate entropy bounds, verifying that false positives like `your_api_key_here` are correctly ignored while high-entropy strings are caught. All outputs are checked for redaction logic to ensure secrets never leak into stdout.
+If your threat model includes adversary-controlled supply chain intrusions, the
+detection surface is the build system behaviour, network telemetry, and dependency
+integrity — not the source files that Vexil scans.
