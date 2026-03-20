@@ -33,10 +33,16 @@ var (
 	blockAt     = flag.String("block-at", "Critical",
 		"Confidence level at which the scan exits 2 (block). "+
 			"Valid values: Low, Medium, High, Critical.")
+	versionFlag = flag.Bool("version", false, "Print version and exit")
 )
 
 func main() {
 	flag.Parse()
+
+	if *versionFlag {
+		fmt.Printf("Vexil version %s\n", reporter.Version)
+		os.Exit(exitClean)
+	}
 
 	// Validation
 	if _, ok := types.ConfidenceLevel[*blockAt]; !ok {

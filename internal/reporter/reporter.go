@@ -10,7 +10,7 @@ import (
 )
 
 // Version is the current version of Vexil, overridden at build time.
-var Version = "2.6.0"
+var Version = "2.6.1"
 
 // reportFinding is the safe, serializable representation of a Finding.
 type reportFinding struct {

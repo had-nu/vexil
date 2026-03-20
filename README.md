@@ -5,7 +5,7 @@
 <h1 align="center">Vexil</h1>
 
 <p align="center">
-  <a href="https://github.com/had-nu/vexil/releases"><img src="https://img.shields.io/badge/Version-2.6.0-purple?style=flat-square" alt="Version"></a>
+  <a href="https://github.com/had-nu/vexil/releases"><img src="https://img.shields.io/badge/Version-2.6.1-purple?style=flat-square" alt="Version"></a>
   <a href="https://golang.org"><img src="https://img.shields.io/badge/Go-1.25.7+-00ADD8?style=flat-square&logo=go" alt="Go"></a>
   <img src="https://img.shields.io/badge/Wardex-Integrated-blueviolet?style=flat-square" alt="Wardex">
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache--2.0-green?style=flat-square" alt="License"></a>
@@ -83,9 +83,9 @@ docker compose run vexil -dir /src -format json
 ./vexil -format sarif
 ```
 
-## The Vexil v2.6.0 Risk Model
+## The Vexil v2.6.1 Risk Model
 
-Vexil v2.6.0 transitions from simple detection to a **Compliance-Ready Evidence Model**:
+Vexil v2.6.1 transitions from simple detection to a **Compliance-Ready Evidence Model**:
 
 1. **Compliance Controls:** Findings are automatically tagged with regulatory controls (e.g., `ISO27001:A.8.12`).
 2. **Blast Radius:** Estimates the scope of impact (`pipeline`, `infrastructure`, `industrial`).
@@ -94,12 +94,12 @@ Vexil v2.6.0 transitions from simple detection to a **Compliance-Ready Evidence 
 
 ### Output Formats
 
-**JSON Output (v2.6.0):**
+**JSON Output (v2.6.1):**
 ```json
 {
   "scan_metadata": {
     "tool": "vexil",
-    "version": "2.6.0",
+    "version": "2.6.1",
     "timestamp": "2026-03-18T14:10:00Z",
     "files_scanned": 142,
     "files_with_findings": 1,
