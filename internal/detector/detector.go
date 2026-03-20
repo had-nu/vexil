@@ -72,8 +72,9 @@ func DefaultPatterns() []Pattern {
 		{
 			Name:                "HashiCorp Vault Token",
 			SecretClass:         "token",
-			Regex:               regexp.MustCompile(`\b(hvs\.|hvb\.|s\.)[A-Za-z0-9_\-]{20,}`),
+			Regex:               regexp.MustCompile(`\b(hvs\.|hvb\.|hvo\.|hvp\.)[A-Za-z0-9_\-]{32,}`),
 			Redact:              nil,
+			MinEntropy:          3.5,
 			StructuralValidator: validateVaultToken,
 		},
 		{
@@ -86,9 +87,9 @@ func DefaultPatterns() []Pattern {
 		{
 			Name:        "Infrastructure Password",
 			SecretClass: "credential",
-			Regex:       regexp.MustCompile(`(?i)(password|passwd|pwd)\s*(=|:)\s*['"]?[^\s'"]{8,}['"]?`),
+			Regex:       regexp.MustCompile(`(?i)(password|passwd|pwd)\s*(=|:)\s*['"]([^\s'"]{12,})['"]`),
 			Redact:      redactValue,
-			MinEntropy:  0.0,
+			MinEntropy:  3.5,
 		},
 		{
 			Name:        "Kafka JAAS Password",
@@ -121,10 +122,10 @@ func DefaultPatterns() []Pattern {
 		{
 			Name:        "Gradle/Maven Repository Credentials",
 			SecretClass: "credential",
-			Regex:       regexp.MustCompile(`(?i)(username|password|secret)\s*[:=]\s*['"]([^\s'"]{8,})['"]`),
+			Regex:       regexp.MustCompile(`(?i)(username|password|secret)\s*[:=]\s*['"]([^\s'"]{12,})['"]`),
 			Redact:      redactValue,
-			MinEntropy:  0.0,
-			valueRegex:  regexp.MustCompile(`(?i)(?:username|password|secret)\s*[:=]\s*['"]([^\s'"]{8,})['"]`),
+			MinEntropy:  3.5,
+			valueRegex:  regexp.MustCompile(`(?i)(?:username|password|secret)\s*[:=]\s*['"]([^\s'"]{12,})['"]`),
 		},
 		{
 			Name:        "GitHub Actions Env Secret",
@@ -225,9 +226,11 @@ func New(patterns []Pattern) *Detector {
 }
 
 // Detect scans the provided content and returns a list of findings.
+// The error return is reserved for detector implementations that perform
+// I/O or external lookups; this implementation always returns nil.
 func (d *Detector) Detect(content []byte) ([]types.Finding, error) {
 	lines := strings.Split(string(content), "\n")
-	findings := make([]types.Finding, 0)
+	var findings []types.Finding
 
 	for lineNum, line := range lines {
 		for i := range d.patterns {
@@ -369,7 +372,7 @@ func validatePrivateKey(v string) bool {
 }
 
 func validateVaultToken(v string) bool {
-	return (strings.HasPrefix(v, "hvs.") || strings.HasPrefix(v, "s.")) && len(v) >= 24
+	return (strings.HasPrefix(v, "hvs.") || strings.HasPrefix(v, "hvb.") || strings.HasPrefix(v, "hvo.") || strings.HasPrefix(v, "hvp.")) && len(v) >= 32
 }
 
 func isUpperAlphanumeric(s string) bool {

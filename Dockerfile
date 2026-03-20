@@ -3,21 +3,23 @@ FROM golang:alpine AS builder
 
 WORKDIR /app
 
+# Install build dependencies
+RUN apk add --no-cache git
+
 # Copy go.mod and go.sum (if it exists)
 COPY go.mod go.sum* ./
-# Download dependencies
 RUN go mod download
 
 # Copy the rest of the source code
 COPY . .
 
-# Build the binary
-RUN CGO_ENABLED=0 GOOS=linux go build -o vexil cmd/vexil/main.go
+# Build the binary - Stripped and statically linked
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o vexil cmd/vexil/main.go
 
-# Final stage
-FROM alpine:latest
+# Final stage - Minimal Alpine
+FROM alpine:3.19
 
-# Install ca-certificates and git (required for --git-aware)
+# Install minimal certificates for HTTPS and git for --git-aware
 RUN apk --no-cache add ca-certificates git
 
 WORKDIR /root/

@@ -37,6 +37,9 @@ func (g *GitScanner) IsShallowClone() bool {
 // ScanHistory executes `git log` and streams the diffs through the detector.
 // It returns findings tagged with a synthetic file path (e.g. git:commit/<sha>:<path>).
 func (g *GitScanner) ScanHistory(ctx context.Context) ([]types.Finding, error) {
+	// --no-merges excludes merge commits, which would duplicate findings already
+	// present in the source branches. Secrets introduced via merge strategy
+	// (e.g. ours/theirs) are captured by the individual branch commits.
 	cmd := exec.CommandContext(ctx, "git", "-C", g.repoRoot, "log", "--all", "-p", "--no-merges", "--format=COMMIT:%h")
 	
 	stdout, err := cmd.StdoutPipe()

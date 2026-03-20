@@ -1,0 +1,28 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4B0082;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#210041;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="grad2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#6A0DAD;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4B0082;stop-opacity:1" />
+    </linearGradient>
+    <dropShadow id="shadow" dx="0" dy="4" stdDeviation="4" flood-color="black" flood-opacity="0.5"/>
+  </defs>
+  
+  <!-- Outer V Shape (Left Side) -->
+  <path d="M70 100 L200 100 L300 350 L256 412 L70 100Z" fill="url(#grad1)" />
+  
+  <!-- Outer V Shape (Right Side) -->
+  <path d="M442 100 L312 100 L212 350 L256 412 L442 100Z" fill="#1A0033" />
+  
+  <!-- Main Overlay V Shape -->
+  <path d="M120 100 L256 412 L392 100 L340 100 L256 312 L172 100 L120 100Z" fill="url(#grad2)" />
+  
+  <!-- Inner Highlight/Cut -->
+  <path d="M256 412 L200 300 L256 340 L312 300 L256 412Z" fill="#FDFDFD" fill-opacity="0.1" />
+
+  <!-- Sharp edge highlights -->
+  <path d="M256 412 L300 350 L392 100 L442 100 L256 450 L70 100 L120 100 L212 350 L256 412Z" fill="#4B0082" fill-opacity="0.3" />
+</svg>

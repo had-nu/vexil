@@ -65,7 +65,12 @@ var highValueExts = []string{
 
 var zeroValueDirs = []string{
 	"vendor/", "testdata/", "generated/", "docs/", "dist/",
-	"node_modules/", "pb/", "mocks/",
+	"node_modules/", "pb/", "mocks/", "assets/", "example/", "examples/",
+}
+
+var zeroValueFiles = []string{
+	"go.sum", "go.mod", "yarn.lock", "package-lock.json", "pnpm-lock.yaml",
+	".gitignore", ".dockerignore", ".gitattributes",
 }
 
 func pathScore(path string, size int64) float64 {
@@ -78,6 +83,17 @@ func pathScore(path string, size int64) float64 {
 		}
 	}
 
+	base := strings.ToLower(filepath.Base(path))
+	for _, f := range zeroValueFiles {
+		if base == f {
+			return -1
+		}
+	}
+
+	if strings.HasSuffix(base, "_test.go") {
+		return -1
+	}
+
 	score := 0.0
 
 	for _, d := range highValueDirs {
@@ -87,7 +103,7 @@ func pathScore(path string, size int64) float64 {
 		}
 	}
 
-	base := strings.ToLower(filepath.Base(path))
+
 	for _, n := range highValueNames {
 		if strings.Contains(base, n) {
 			score += 2.0

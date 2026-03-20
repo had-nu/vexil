@@ -19,6 +19,7 @@ profile.cov
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+vexil_whitepaper_v2.tex
 
 # Go workspace file
 go.work
@@ -33,3 +34,15 @@ go.work.sum
 
 # doc/
 bin/
+
+# Vexil Benchmark
+vexil
+testdata/benchmark_results.jsonl
+testdata/benchmark_runner
+testdata/temp_repos/
+testdata/corpus/
+testdata/fetch_repos.py
+testdata/consolidate_repos.py
+testdata/analyze_results.py
+testdata/benchmark_repos.json
+testdata/empirical_entropy.json
