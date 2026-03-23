@@ -87,7 +87,7 @@ func DefaultPatterns() []Pattern {
 		{
 			Name:        "Infrastructure Password",
 			SecretClass: "credential",
-			Regex:       regexp.MustCompile(`(?i)(password|passwd|pwd)\s*(=|:)\s*['"']?([^\s'"]{12,})['"']?`),
+			Regex:       regexp.MustCompile(`(?i)(password|passwd|pwd)\s*(=|:)\s*['"']?([^\s'\"\[\]]{12,})['"']?`),
 			Redact:      redactValue,
 			MinEntropy:  3.5,
 		},
@@ -122,10 +122,10 @@ func DefaultPatterns() []Pattern {
 		{
 			Name:        "Gradle/Maven Repository Credentials",
 			SecretClass: "credential",
-			Regex:       regexp.MustCompile(`(?i)(username|password|secret)\s*[:=]\s*['"']?([^\s'"]{12,})['"']?`),
+			Regex:       regexp.MustCompile(`(?i)(username|password|secret)\s*[:=]\s*['"']?([^\s'\"\[\]]{12,})['"']?`),
 			Redact:      redactValue,
 			MinEntropy:  3.5,
-			valueRegex:  regexp.MustCompile(`(?i)(?:username|password|secret)\s*[:=]\s*['"']?([^\s'"]{12,})['"']?`),
+			valueRegex:  regexp.MustCompile(`(?i)(?:username|password|secret)\s*[:=]\s*['"']?([^\s'\"\[\]]{12,})['"']?`),
 		},
 		{
 			Name:        "GitHub Actions Env Secret",
@@ -255,7 +255,7 @@ func (d *Detector) checkPattern(pattern *Pattern, line string, lineNumber int) (
 	confidence := "Critical"
 
 	// Entropy check: measure randomness to eliminates false positives.
-	if pattern.MinEntropy > 0 && pattern.SecretClass == "token" {
+	if pattern.MinEntropy > 0 {
 		if ent < pattern.MinEntropy {
 			return types.Finding{}, false
 		}

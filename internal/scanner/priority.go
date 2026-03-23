@@ -66,6 +66,7 @@ var highValueExts = []string{
 var zeroValueDirs = []string{
 	"vendor/", "testdata/", "generated/", "docs/", "dist/",
 	"node_modules/", "pb/", "mocks/", "assets/", "example/", "examples/",
+	".venv/", "venv/", "env/",
 }
 
 var zeroValueFiles = []string{
@@ -90,7 +91,7 @@ func pathScore(path string, size int64) float64 {
 		}
 	}
 
-	if strings.HasSuffix(base, "_test.go") {
+	if strings.HasSuffix(base, "_test.go") || strings.HasSuffix(base, ".pyi") {
 		return -1
 	}
 

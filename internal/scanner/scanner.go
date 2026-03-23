@@ -39,6 +39,9 @@ var defaultIgnoreDirs = map[string]struct{}{
 	"vendor":       {},
 	"node_modules": {},
 	"bin":          {},
+	".venv":        {},
+	"venv":         {},
+	"env":          {},
 }
 
 // FileScanner scans files for secrets.

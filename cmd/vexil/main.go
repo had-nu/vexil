@@ -133,6 +133,7 @@ func run() (types.ScanResult, error) {
 		} else {
 			fmt.Fprintf(os.Stderr, "Scanned %d files in %v. Found %d secrets.\n", result.FilesScanned, duration, len(result.Findings))
 		}
+		ui.PrintProjectSummary(os.Stderr, *dirArg, result.Findings)
 	}
 
 	// Report any file-level errors so they are visible to the operator.

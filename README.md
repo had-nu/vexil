@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://github.com/had-nu/vexil/releases">
-    <img src="https://img.shields.io/badge/Version-2.6.1-purple?style=flat-square" alt="Version">
+    <img src="https://img.shields.io/badge/Version-2.7.1-purple?style=flat-square" alt="Version">
   </a>
   <a href="https://golang.org">
     <img src="https://img.shields.io/badge/Go-1.25.7+-00ADD8?style=flat-square&logo=go" alt="Go">
