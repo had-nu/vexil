@@ -1,3 +1,4 @@
+// Copyright (c) 2026 André Ataíde. All rights reserved. Vexil Signature: 5dc7765e9af955cba68ccbd4a4c07768971c9ad0c937ffca795f20e47054975f
 package types
 
 import "fmt"

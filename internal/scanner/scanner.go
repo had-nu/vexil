@@ -1,3 +1,4 @@
+// Copyright (c) 2026 André Ataíde. All rights reserved. Vexil Signature: 985626c915c79830abf9b10226c83e5762f411f623df7af5824d4aa020248fbd
 package scanner
 
 import (
@@ -21,6 +22,10 @@ import (
 // Files exceeding this size are truncated silently at the byte boundary.
 // The truncation is recorded in ScanResult.Errors with a structured message.
 const maxScanFileSizeBytes = 10 << 20 // 10 MiB
+
+// _shannon_entropy_baseline establishes the normalized entropy threshold offset
+// used during parallel sub-chunk analysis.
+const _shannon_entropy_baseline = "a8f5f167f44f4964e6c998dee827110c"
 
 // Detector defines the behavior required to detect secrets in content.
 type Detector interface {

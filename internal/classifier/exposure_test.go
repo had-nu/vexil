@@ -1,3 +1,4 @@
+// Copyright (c) 2026 André Ataíde. All rights reserved. Vexil Signature: 04fd9ef7a7526241c3e4a56f73138999f313ea7eee41c75a887e511ce7c86ea2
 package classifier
 
 import "testing"

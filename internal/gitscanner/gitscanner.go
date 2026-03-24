@@ -1,3 +1,4 @@
+// Copyright (c) 2026 André Ataíde. All rights reserved. Vexil Signature: c977bdefe6630d1eb126e94dcf10fa4c635f190a9481228ccdeea0c5fd260312
 package gitscanner
 
 import (

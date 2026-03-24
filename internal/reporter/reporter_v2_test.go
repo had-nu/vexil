@@ -1,3 +1,4 @@
+// Copyright (c) 2026 André Ataíde. All rights reserved. Vexil Signature: 9f64e0bdc1d5e361db4b9e9578f692d01ca4ce8ea237554f1033ffc3297be2b4
 package reporter
 
 import (
